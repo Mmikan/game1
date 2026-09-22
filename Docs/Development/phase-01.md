@@ -8,20 +8,20 @@
 
 - [x] リポジトリ取得、既存変更確認、Phaseブランチ作成
 - [x] Git除外・LFS属性・仕様書配置
-- [ ] Unity 6 LTS Editorとライセンスの準備
-- [ ] URP / Input System / Localization / NGOの導入、バージョン固定
-- [ ] Force Text / Visible Meta Files、Packages lock、Windowsビルド設定
-- [ ] RunConfig / ItemDefinition、JSON overrideと検証
-- [ ] FPS移動・しゃがみ・ジャンプ・スタミナ・状態機械
-- [ ] Interact / 保持・投擲・落下・破損 / ライト / Ping
-- [ ] 固定灰箱マップ / Door / カート / 出口 / 通常品6種
-- [ ] 回収・売却・目標達成・タイマー・脱出・Result
-- [ ] 日本語String TableとHUD
-- [ ] 設定保存・破損時安全起動・Graphics Reset / Apply / Revert
-- [ ] Edit Mode / Play Modeテスト
-- [ ] Windows Standalone Build / Console error 0
-- [ ] 1人で回収→売却→目標→脱出、タイムアウト失敗を実機確認
-- [ ] CHANGELOG / 検証記録更新、commit、push、レビュワーへ報告
+- [x] Unity 6 LTS Editorとライセンスの準備
+- [x] URP / Input System / Localization / NGOの導入、バージョン固定
+- [x] Force Text / Visible Meta Files、Packages lock、Windowsビルド設定
+- [x] RunConfig / ItemDefinition、JSON overrideと検証
+- [x] FPS移動・しゃがみ・ジャンプ・スタミナ・状態機械
+- [x] Interact / 保持・投擲・落下・破損 / ライト / Ping
+- [x] 固定灰箱マップ / Door / カート / 出口 / 通常品6種
+- [x] 回収・売却・目標達成・タイマー・脱出・Result
+- [x] 日本語String TableとHUD
+- [x] 設定保存・破損時安全起動・Graphics Reset / Apply / Revert
+- [x] Edit Mode / Play Modeテスト
+- [x] Windows Standalone Build / Console error 0
+- [x] 1人で回収→売却→目標→脱出、タイムアウト失敗を実機確認
+- [x] CHANGELOG / 検証記録更新、commit、push、レビュワーへ報告
 
 ## レビューで確認する仕様の曖昧さ
 
@@ -35,4 +35,11 @@
 
 ## 現時点の検証記録
 
-環境準備のみ。Unity未実行。コンパイル、テスト、Windowsビルド、ゲームプレイの合格は未確認。
+2026-09-23、Unity 6000.3.12f1で検証。
+
+- コンテンツ生成とC#コンパイル: PASS、return code 0。
+- Edit Mode: 5件中5件PASS。
+- Play Mode: 2件中2件PASS。売却目標達成から脱出成功までと、時間切れ失敗を検証。
+- Windows Standalone: PASS。`Builds/Windows/GAME1.exe`、ビルド出力99,290,189 bytes。
+- Windows実行スモーク: LG側モニター2で起動し、15秒間のPlayerログで例外・Errorなし。
+- ローカルGemmaレビュー: 使用量区切りで実行。未コミット変更を保持して引き継ぎ済み。
