@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Localization.Settings;
 using Game1.Config;
+using Game1.Debuffs;
 
 namespace Game1.Gameplay
 {
@@ -49,6 +50,26 @@ namespace Game1.Gameplay
 
             if (graphics != null && GUI.Button(new Rect(24, Screen.height - 58, 190, 34), Text("settings.graphics.reset")))
                 graphics.ResetGraphics();
+
+            PlayerDebuffController debuff = player.GetComponent<PlayerDebuffController>();
+            if (debuff != null && debuff.Kind != DebuffKind.None)
+            {
+                GUI.Label(new Rect(24, 88, 560, 36), $"{Text("hud.debuff")}: {Text(debuff.Definition.LocalizationKey)}", labelStyle);
+                if (Debug.isDebugBuild) GUI.Label(new Rect(24, 120, 700, 30), Text("hud.debuff.debug_cycle"), labelStyle);
+                if (debuff.TapeProgress01 > 0f) GUI.Label(new Rect(Screen.width * 0.5f - 150, Screen.height * 0.64f, 300, 40), $"Tape {Mathf.RoundToInt(debuff.TapeProgress01 * 100f)}%", centerStyle);
+                if (debuff.DropWarning) GUI.Label(new Rect(Screen.width * 0.5f - 150, Screen.height * 0.58f, 300, 48), Text("hud.debuff.drop_warning"), centerStyle);
+                if (debuff.TunnelVisionAlpha > 0f) DrawTunnelVision(debuff.TunnelVisionAlpha);
+            }
+        }
+
+        private static void DrawTunnelVision(float alpha)
+        {
+            Color previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, alpha);
+            float edge = Screen.width * 0.2f;
+            GUI.DrawTexture(new Rect(0, 0, edge, Screen.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(Screen.width - edge, 0, edge, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         private static string Text(string key)

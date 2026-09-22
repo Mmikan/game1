@@ -1,4 +1,5 @@
 using Game1.Items;
+using Game1.Debuffs;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -28,11 +29,18 @@ namespace Game1.Gameplay
         private float stamina;
         private bool crouched;
         private float throwCharge;
+        private PlayerDebuffController debuff;
+        private Vector2 movementInput;
+        private bool turningThisFrame;
 
         public PlayerLifeState LifeState { get; private set; } = PlayerLifeState.Alive;
         public PickupItem HeldItem { get; private set; }
         public Camera ViewCamera => viewCamera;
         public float Stamina => stamina;
+        public bool IsCrouched => crouched;
+        public bool IsMoving => movementInput.sqrMagnitude > 0.01f;
+        public Transform CarryAnchor => carryAnchor;
+        public bool FlashlightOn => flashlight != null && flashlight.enabled;
         public void Configure(Camera cameraValue, Transform anchorValue, Light lightValue)
         {
             viewCamera = cameraValue;
@@ -43,6 +51,7 @@ namespace Game1.Gameplay
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            debuff = GetComponent<PlayerDebuffController>();
             stamina = staminaMax;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -61,6 +70,7 @@ namespace Game1.Gameplay
             var mouse = Mouse.current;
             if (mouse == null) return;
             Vector2 delta = mouse.delta.ReadValue() * mouseSensitivity;
+            turningThisFrame = Mathf.Abs(delta.x) > 0.01f;
             pitch = Mathf.Clamp(pitch - delta.y, -85f, 85f);
             viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
             transform.Rotate(0f, delta.x, 0f);
@@ -77,17 +87,25 @@ namespace Game1.Gameplay
             if (keyboard.dKey.isPressed) input.x += 1f;
             if (keyboard.aKey.isPressed) input.x -= 1f;
             input = Vector2.ClampMagnitude(input, 1f);
+            if (debuff != null && debuff.MovementBlocked) input = Vector2.zero;
+            movementInput = input;
 
             bool sprinting = !crouched && HeldItem == null && keyboard.leftShiftKey.isPressed && input.y > 0f && stamina > 0f;
             float speed = crouched ? crouchSpeed : sprinting ? sprintSpeed : HeldItem != null && HeldItem.Definition.TwoHanded ? 3f : walkSpeed;
-            if (sprinting) stamina = Mathf.Max(0f, stamina - sprintCostPerSecond * Time.deltaTime);
-            else stamina = Mathf.Min(staminaMax, stamina + staminaRecoveryPerSecond * Time.deltaTime);
+            if (debuff != null) speed = debuff.ResolveMoveSpeed(speed, input, turningThisFrame);
+            float sprintCost = debuff != null ? debuff.SprintCostPerSecond : sprintCostPerSecond;
+            float recovery = debuff != null ? debuff.StaminaRecoveryPerSecond : staminaRecoveryPerSecond;
+            if (sprinting) stamina = Mathf.Max(0f, stamina - sprintCost * Time.deltaTime);
+            else stamina = Mathf.Min(staminaMax, stamina + recovery * Time.deltaTime);
 
             if (controller.isGrounded)
             {
                 verticalVelocity = -2f;
                 if (!crouched && keyboard.spaceKey.wasPressedThisFrame)
+                {
                     verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * Physics.gravity.y);
+                    debuff?.NotifyImpactOrJump();
+                }
             }
             else verticalVelocity += Physics.gravity.y * Time.deltaTime;
 
@@ -114,7 +132,8 @@ namespace Game1.Gameplay
         {
             if (HeldItem != null || item == null || item.Definition.RequiredCarriers > 1) return false;
             HeldItem = item;
-            item.BeginHold(carryAnchor);
+            item.BeginHold(carryAnchor, debuff != null ? debuff.HeldItemDurabilityMultiplier : 1f);
+            debuff?.NotifyPickedUp();
             return true;
         }
 
@@ -124,9 +143,11 @@ namespace Game1.Gameplay
             PickupItem item = HeldItem;
             HeldItem = null;
             float throwSpeed = Mathf.Lerp(5f, 10f, Mathf.Clamp01(throwCharge / 0.7f));
-            Vector3 velocity = throwItem && item.Definition.Throwable ? viewCamera.transform.forward * throwSpeed : Vector3.zero;
+            bool canThrow = debuff == null || debuff.CanThrowHeldItem;
+            Vector3 velocity = throwItem && canThrow && item.Definition.Throwable ? viewCamera.transform.forward * throwSpeed : Vector3.zero;
             throwCharge = 0f;
             item.EndHold(velocity);
+            debuff?.NotifyDropped();
         }
 
         private void ToggleCrouch()
@@ -134,6 +155,13 @@ namespace Game1.Gameplay
             crouched = !crouched;
             controller.height = crouched ? 1.1f : 1.75f;
             controller.center = Vector3.up * controller.height * 0.5f;
+        }
+
+        public void RestoreStamina(float amount) => stamina = Mathf.Min(staminaMax, stamina + Mathf.Max(0f, amount));
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.moveDirection.y < -0.2f || hit.moveLength > 0.05f) debuff?.NotifyImpactOrJump();
         }
     }
 }

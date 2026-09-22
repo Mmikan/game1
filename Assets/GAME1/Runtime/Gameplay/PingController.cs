@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Game1.Debuffs;
 
 namespace Game1.Gameplay
 {
@@ -12,15 +13,21 @@ namespace Game1.Gameplay
         [SerializeField] private float cooldown = 2f;
         private LocalPlayerController player;
         private float nextAllowedTime;
+        private PlayerDebuffController debuff;
 
-        private void Awake() => player = GetComponent<LocalPlayerController>();
+        private void Awake()
+        {
+            player = GetComponent<LocalPlayerController>();
+            debuff = GetComponent<PlayerDebuffController>();
+        }
 
         private void Update()
         {
             if (Keyboard.current == null || !Keyboard.current.qKey.wasPressedThisFrame || Time.time < nextAllowedTime) return;
             nextAllowedTime = Time.time + cooldown;
+            float effectiveRange = debuff != null ? debuff.PingRange : range;
             Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
-            Vector3 position = Physics.Raycast(ray, out RaycastHit hit, range) ? hit.point : ray.GetPoint(range);
+            Vector3 position = Physics.Raycast(ray, out RaycastHit hit, effectiveRange) ? hit.point : ray.GetPoint(effectiveRange);
             GameObject marker = markerPrefab != null
                 ? Instantiate(markerPrefab, position + Vector3.up * 0.05f, Quaternion.identity)
                 : GameObject.CreatePrimitive(PrimitiveType.Sphere);

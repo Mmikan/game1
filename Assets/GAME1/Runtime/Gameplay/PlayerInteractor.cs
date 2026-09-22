@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Game1.Debuffs;
 
 namespace Game1.Gameplay
 {
@@ -12,11 +13,16 @@ namespace Game1.Gameplay
         private LocalPlayerController player;
         private IInteractable heldTarget;
         private float heldTime;
+        private PlayerDebuffController debuff;
 
         public IInteractable Current { get; private set; }
         public float Progress01 => heldTarget == null ? 0f : Mathf.Clamp01(heldTime / holdSeconds);
 
-        private void Awake() => player = GetComponent<LocalPlayerController>();
+        private void Awake()
+        {
+            player = GetComponent<LocalPlayerController>();
+            debuff = GetComponent<PlayerDebuffController>();
+        }
 
         private void Update()
         {
@@ -43,7 +49,8 @@ namespace Game1.Gameplay
         private IInteractable FindTarget()
         {
             Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
-            if (!Physics.Raycast(ray, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore)) return null;
+            float effectiveRange = debuff != null ? debuff.ResolveInteractionRange(range) : range;
+            if (!Physics.Raycast(ray, out RaycastHit hit, effectiveRange, mask, QueryTriggerInteraction.Ignore)) return null;
             return hit.collider.GetComponentInParent<IInteractable>();
         }
     }

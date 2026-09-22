@@ -10,6 +10,7 @@ namespace Game1.Items
         private Rigidbody body;
         private bool sold;
         private int durability;
+        private float nextImpactDamageMultiplier = 1f;
 
         public ItemDefinition Definition => definition;
         public string PromptKey => "hud.interact.pick_up";
@@ -35,13 +36,14 @@ namespace Game1.Items
 
         public void Interact(LocalPlayerController player) => player.TryHold(this);
 
-        public void BeginHold(Transform anchor)
+        public void BeginHold(Transform anchor, float impactDamageMultiplier = 1f)
         {
             IsHeld = true;
             body.isKinematic = true;
             body.useGravity = false;
             transform.SetParent(anchor, false);
             transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            nextImpactDamageMultiplier = Mathf.Max(1f, impactDamageMultiplier);
         }
 
         public void EndHold(Vector3 velocity)
@@ -68,8 +70,9 @@ namespace Game1.Items
             if (IsHeld || IsBroken || definition == null) return;
             float impact = collision.relativeVelocity.magnitude;
             if (impact <= 2f) return;
-            int damage = Mathf.CeilToInt((impact - 2f) * definition.Fragility * 0.1f);
+            int damage = Mathf.CeilToInt((impact - 2f) * definition.Fragility * 0.1f * nextImpactDamageMultiplier);
             durability = Mathf.Max(0, durability - damage);
+            nextImpactDamageMultiplier = 1f;
         }
     }
 }

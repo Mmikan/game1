@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game1.Config;
+using Game1.Debuffs;
 using Game1.Gameplay;
 using Game1.Items;
 using Game1.Network;
@@ -40,8 +41,9 @@ namespace Game1.Editor
             GraphicsPresetDefinition mediumPreset = CreateGraphicsPreset("Medium", GraphicsPresetId.Medium, 1920, 1080, 1f, 60, true);
             GraphicsPresetDefinition safePreset = CreateGraphicsPreset("SafeLow", GraphicsPresetId.Low, 1280, 720, 0.7f, 60, true);
             Dictionary<string, ItemDefinition> definitions = CreateItemDefinitions();
+            Dictionary<DebuffKind, DebuffDefinition> debuffs = CreateDebuffDefinitions();
             CreateLocalization();
-            CreateScene(runConfig, mediumPreset, safePreset, definitions);
+            CreateScene(runConfig, mediumPreset, safePreset, definitions, debuffs);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"GAME1 Phase 1 content generated: {ScenePath}");
@@ -161,6 +163,38 @@ namespace Game1.Editor
             return result;
         }
 
+        private static Dictionary<DebuffKind, DebuffDefinition> CreateDebuffDefinitions()
+        {
+            var result = new Dictionary<DebuffKind, DebuffDefinition>();
+            foreach (DebuffKind kind in System.Enum.GetValues(typeof(DebuffKind)))
+            {
+                if (kind == DebuffKind.None) continue;
+                string path = $"{DataPath}/Debuff_{kind}.asset";
+                DebuffDefinition asset = AssetDatabase.LoadAssetAtPath<DebuffDefinition>(path);
+                if (asset == null) { asset = ScriptableObject.CreateInstance<DebuffDefinition>(); AssetDatabase.CreateAsset(asset, path); }
+                SoloFallback fallback = kind switch
+                {
+                    DebuffKind.Tremor => SoloFallback.FloorStabilize,
+                    DebuffKind.TunnelVision => SoloFallback.HandMap,
+                    DebuffKind.HeavyBreath => SoloFallback.CrouchRecovery,
+                    DebuffKind.FragileGrip => SoloFallback.TapeBox,
+                    _ => SoloFallback.None
+                };
+                DebuffKind[] incompatible = kind switch
+                {
+                    DebuffKind.TunnelVision => new[] { DebuffKind.LostVoice },
+                    DebuffKind.LostVoice => new[] { DebuffKind.TunnelVision },
+                    DebuffKind.HeavyBreath => new[] { DebuffKind.BackPain },
+                    DebuffKind.BackPain => new[] { DebuffKind.HeavyBreath },
+                    _ => System.Array.Empty<DebuffKind>()
+                };
+                asset.Configure(kind, fallback, incompatible);
+                EditorUtility.SetDirty(asset);
+                result.Add(kind, asset);
+            }
+            return result;
+        }
+
         private static void CreateLocalization()
         {
             var values = new Dictionary<string, string[]>
@@ -174,19 +208,33 @@ namespace Game1.Editor
                 ["hud.exit.progress"] = new[] { "脱出", "Escaping", "逃脱", "탈출" },
                 ["result.success"] = new[] { "脱出成功", "ESCAPED", "逃脱成功", "탈출 성공" },
                 ["result.failure"] = new[] { "任務失敗", "RUN FAILED", "任务失败", "임무 실패" }
-                , ["settings.graphics.reset"] = new[] { "画面設定をリセット", "Reset Graphics", "重置画面设置", "그래픽 초기화" }
+                , ["settings.graphics.reset"] = new[] { "画面設定をリセット", "Reset Graphics", "重置画面设置", "그래픽 초기화" },
+                ["hud.debuff"] = new[] { "デバフ", "Debuff", "减益", "디버프" },
+                ["hud.debuff.drop_warning"] = new[] { "落とす！", "Dropping!", "即将掉落！", "떨어뜨린다!" },
+                ["hud.debuff.debug_cycle"] = new[] { "[F6] デバフ切替（開発用）", "[F6] Cycle debuff (debug)", "[F6] 切换减益（调试）", "[F6] 디버프 전환 (디버그)" },
+                ["debuff.tremor.name"] = new[] { "手の震え", "Tremor", "手部颤抖", "손떨림" },
+                ["debuff.tunnel_vision.name"] = new[] { "視野狭窄", "Tunnel Vision", "视野狭窄", "터널 시야" },
+                ["debuff.heavy_breath.name"] = new[] { "息切れ", "Heavy Breath", "呼吸急促", "거친 숨" },
+                ["debuff.fragile_grip.name"] = new[] { "弱い握力", "Fragile Grip", "握力不足", "약한 악력" },
+                ["debuff.hearing_loss.name"] = new[] { "難聴", "Hearing Loss", "听力受损", "청력 저하" },
+                ["debuff.lost_voice.name"] = new[] { "失声", "Lost Voice", "失声", "실성" },
+                ["debuff.low_light.name"] = new[] { "暗所恐怖", "Low Light", "弱光", "저조도" },
+                ["debuff.back_pain.name"] = new[] { "腰痛", "Back Pain", "背痛", "허리 통증" },
+                ["debuff.static_fear.name"] = new[] { "静止恐怖", "Static Fear", "静止恐惧", "정지 공포" },
+                ["debuff.balance.name"] = new[] { "平衡障害", "Balance", "平衡障碍", "균형 장애" }
             };
             var locales = new[] { ("ja-JP", "Japanese (Japan)"), ("en-US", "English (US)"), ("zh-Hans", "Chinese (Simplified)"), ("ko-KR", "Korean") };
-            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection("UI");
-            if (collection != null) return;
-            collection = LocalizationEditorSettings.CreateStringTableCollection("UI", Root + "/Localization");
+            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection("UI") ?? LocalizationEditorSettings.CreateStringTableCollection("UI", Root + "/Localization");
             for (int localeIndex = 0; localeIndex < locales.Length; localeIndex++)
             {
                 Locale locale = FindOrCreateLocale(locales[localeIndex].Item1, locales[localeIndex].Item2);
                 StringTable table = collection.GetTable(locale.Identifier) as StringTable;
                 if (table == null) table = collection.AddNewTable(locale.Identifier) as StringTable;
                 foreach (KeyValuePair<string, string[]> pair in values)
-                    table.AddEntry(pair.Key, pair.Value[localeIndex]).Value = pair.Value[localeIndex];
+                {
+                    StringTableEntry entry = table.GetEntry(pair.Key) ?? table.AddEntry(pair.Key, pair.Value[localeIndex]);
+                    entry.Value = pair.Value[localeIndex];
+                }
                 EditorUtility.SetDirty(table);
             }
         }
@@ -202,7 +250,7 @@ namespace Game1.Editor
             return locale;
         }
 
-        private static void CreateScene(RunConfig config, GraphicsPresetDefinition defaultPreset, GraphicsPresetDefinition safePreset, IReadOnlyDictionary<string, ItemDefinition> definitions)
+        private static void CreateScene(RunConfig config, GraphicsPresetDefinition defaultPreset, GraphicsPresetDefinition safePreset, IReadOnlyDictionary<string, ItemDefinition> definitions, IReadOnlyDictionary<DebuffKind, DebuffDefinition> debuffs)
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             GameObject systems = new("Systems");
@@ -210,9 +258,11 @@ namespace Game1.Editor
             run.Configure(config);
             GraphicsSettingsService graphics = systems.AddComponent<GraphicsSettingsService>();
             graphics.Configure(defaultPreset, safePreset);
-            CreateNetworkFoundation(systems, config);
+            CreateNetworkFoundation(systems, config, debuffs);
 
             LocalPlayerController player = CreatePlayer();
+            PlayerDebuffController playerDebuff = player.gameObject.AddComponent<PlayerDebuffController>();
+            playerDebuff.Configure(debuffs[DebuffKind.Tremor], new List<DebuffDefinition>(debuffs.Values).ToArray());
             PlayerInteractor interactor = player.gameObject.AddComponent<PlayerInteractor>();
             player.gameObject.AddComponent<PingController>();
 
@@ -312,7 +362,7 @@ namespace Game1.Editor
             networkDoor.Configure(pivot.transform);
         }
 
-        private static void CreateNetworkFoundation(GameObject systems, RunConfig config)
+        private static void CreateNetworkFoundation(GameObject systems, RunConfig config, IReadOnlyDictionary<DebuffKind, DebuffDefinition> debuffs)
         {
             NetworkManager manager = systems.AddComponent<NetworkManager>();
             UnityTransport transport = systems.AddComponent<UnityTransport>();
@@ -320,6 +370,8 @@ namespace Game1.Editor
             menu.Configure(manager, transport);
             NetworkCoopSmokeDriver smoke = systems.AddComponent<NetworkCoopSmokeDriver>();
             smoke.Configure(manager);
+            NetworkDebuffDirector debuffDirector = systems.AddComponent<NetworkDebuffDirector>();
+            debuffDirector.Configure(manager, new List<DebuffDefinition>(debuffs.Values).ToArray());
             manager.NetworkConfig.NetworkTransport = transport;
             manager.NetworkConfig.PlayerPrefab = CreateNetworkPlayerPrefab();
 

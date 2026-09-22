@@ -1,5 +1,6 @@
 using System.Collections;
 using Game1.Gameplay;
+using Game1.Debuffs;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,6 +17,12 @@ namespace Game1.Network
         public NetworkVariable<PlayerLifeState> LifeState { get; } = new(PlayerLifeState.Alive);
         public NetworkVariable<bool> FlashlightOn { get; } = new(false);
         public NetworkVariable<ulong> SupportingClientId { get; } = new(CoopAuthorityRules.NoClient);
+        public NetworkVariable<DebuffKind> Debuff { get; } = new(DebuffKind.None);
+
+        public void SetDebuffOnServer(DebuffKind value)
+        {
+            if (IsServer) Debuff.Value = value;
+        }
 
         private void Update()
         {
@@ -32,7 +39,8 @@ namespace Game1.Network
             if (IsServer && LifeState.Value == PlayerLifeState.Alive)
             {
                 Vector3 movement = transform.right * serverInput.x + transform.forward * serverInput.y;
-                transform.position += movement * (walkSpeed * Time.deltaTime);
+                float effectiveSpeed = Debuff.Value == DebuffKind.HeavyBreath && IsSupportedByAlly() ? 4.6f : walkSpeed;
+                transform.position += movement * (effectiveSpeed * Time.deltaTime);
             }
         }
 
@@ -104,6 +112,15 @@ namespace Game1.Network
             player = null;
             return NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) &&
                    client.PlayerObject != null && client.PlayerObject.TryGetComponent(out player);
+        }
+
+        public bool IsSupportedByAlly()
+        {
+            if (!IsServer) return false;
+            foreach (NetworkClient client in NetworkManager.ConnectedClients.Values)
+                if (client.PlayerObject != null && client.PlayerObject.TryGetComponent(out NetworkPlayerAvatar candidate) &&
+                    candidate.SupportingClientId.Value == OwnerClientId) return true;
+            return false;
         }
     }
 }

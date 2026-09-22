@@ -47,6 +47,7 @@ namespace Game1.Network
                 if (client.PlayerObject != null) client.PlayerObject.transform.position = item.transform.position + Vector3.right * (index++ == 0 ? -0.75f : 0.75f);
             }
             yield return null;
+            Debug.Log($"GAME1_COOP_SMOKE_DEBUFF_ASSIGNED={manager.ConnectedClients.Values.All(client => client.PlayerObject != null && client.PlayerObject.GetComponent<NetworkPlayerAvatar>().Debuff.Value != Game1.Debuffs.DebuffKind.None)}");
             foreach (ulong clientId in manager.ConnectedClientsIds) item.TryRequestCarryOnServer(clientId);
             Debug.Log($"GAME1_COOP_SMOKE_SHARED={item.IsSharedCarry}");
 
@@ -60,6 +61,10 @@ namespace Game1.Network
             rescuer.RequestReviveServerRpc(target.NetworkObjectId);
             yield return new WaitForSeconds(2.2f);
             Debug.Log($"GAME1_COOP_SMOKE_RESCUED={target.LifeState.Value == Game1.Gameplay.PlayerLifeState.Alive}");
+            target.SetDebuffOnServer(Game1.Debuffs.DebuffKind.HeavyBreath);
+            rescuer.SetSupportServerRpc(target.NetworkObjectId, true);
+            yield return null;
+            Debug.Log($"GAME1_COOP_SMOKE_DEBUFF_ASSISTED={target.IsSupportedByAlly()}");
         }
 
         private IEnumerator RequestCarryWhenReady()

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 351d65cd6fb4dd44b9979d3dcedfef0b, type: 3}
+  m_Name: Debuff_FragileGrip
+  m_EditorClassIdentifier: GAME1.Runtime::Game1.Debuffs.DebuffDefinition
+  kind: 4
+  localizationKey: debuff.fragile_grip.name
+  incompatibleWith: 
+  soloFallback: 3
+  tuning:
+    primary: 0.25
+    assisted: 0
+    solo: 2
+    range: 0
+    assistedRange: 0
+    duration: 45
+    interval: 0.75

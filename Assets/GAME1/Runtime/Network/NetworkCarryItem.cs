@@ -34,7 +34,8 @@ namespace Game1.Network
             if (!TryGetCarrier(PrimaryCarrier.Value, out NetworkPlayerAvatar first)) { Release(); return; }
             if (SecondaryCarrier.Value == CoopAuthorityRules.NoClient)
             {
-                transform.position = first.transform.position + first.transform.forward * 1.1f + Vector3.up;
+                Vector3 tremor = first.Debuff.Value == Game1.Debuffs.DebuffKind.Tremor ? TremorOffset(0.18f) : Vector3.zero;
+                transform.position = first.transform.position + first.transform.forward * 1.1f + Vector3.up + tremor;
                 return;
             }
             if (!TryGetCarrier(SecondaryCarrier.Value, out NetworkPlayerAvatar second) || Vector3.Distance(first.transform.position, second.transform.position) > 3f)
@@ -42,7 +43,9 @@ namespace Game1.Network
                 Release();
                 return;
             }
-            transform.position = (first.transform.position + second.transform.position) * 0.5f + (first.transform.forward + second.transform.forward).normalized * 0.8f + Vector3.up;
+            bool tremorCarrier = first.Debuff.Value == Game1.Debuffs.DebuffKind.Tremor || second.Debuff.Value == Game1.Debuffs.DebuffKind.Tremor;
+            transform.position = (first.transform.position + second.transform.position) * 0.5f + (first.transform.forward + second.transform.forward).normalized * 0.8f + Vector3.up +
+                                 (tremorCarrier ? TremorOffset(0.04f) : Vector3.zero);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -109,5 +112,8 @@ namespace Game1.Network
             player = null;
             return NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient client) && client.PlayerObject != null && client.PlayerObject.TryGetComponent(out player);
         }
+
+        private static Vector3 TremorOffset(float magnitude) =>
+            new(Mathf.Sin(Time.time * 17f) * magnitude, Mathf.Cos(Time.time * 19f) * magnitude, 0f);
     }
 }
