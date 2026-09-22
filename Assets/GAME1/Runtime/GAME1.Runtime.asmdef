@@ -3,7 +3,9 @@
   "rootNamespace": "Game1",
   "references": [
     "Unity.InputSystem",
-    "Unity.Localization"
+    "Unity.Localization",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport"
   ],
   "autoReferenced": true
 }

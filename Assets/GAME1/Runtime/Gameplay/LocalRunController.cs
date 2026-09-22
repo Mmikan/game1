@@ -15,6 +15,7 @@ namespace Game1.Gameplay
         public int SoldValue { get; private set; }
         public int TargetValue => config != null ? config.TargetValue : 0;
         public bool ExitUnlocked => State is RunState.ObjectiveComplete or RunState.Succeeded;
+        public void Configure(RunConfig value) => config = value;
 
         private void Awake()
         {

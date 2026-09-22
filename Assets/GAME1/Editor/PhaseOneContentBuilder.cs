@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Game1.Config;
 using Game1.Gameplay;
 using Game1.Items;
+using Game1.Network;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Localization;
@@ -12,6 +13,9 @@ using UnityEngine.Localization.Tables;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using Unity.Netcode.Transports.UTP;
 
 namespace Game1.Editor
 {
@@ -116,14 +120,15 @@ namespace Game1.Editor
 
         private static Dictionary<string, ItemDefinition> CreateItemDefinitions()
         {
-            var data = new (string id, int value, float weight, ItemSize size, int fragility, float noise, bool twoHanded, int spawnWeight, float brokenMultiplier)[]
+            var data = new (string id, int value, float weight, ItemSize size, int fragility, float noise, bool twoHanded, int carriers, int spawnWeight, float brokenMultiplier)[]
             {
-                ("plush_bear", 80, 0.7f, ItemSize.S, 5, 0f, false, 18, 0.5f),
-                ("toy_car", 110, 1.2f, ItemSize.S, 35, 3f, false, 16, 0.5f),
-                ("music_box", 180, 1.5f, ItemSize.S, 75, 5f, false, 12, 0.5f),
-                ("dollhouse", 260, 5f, ItemSize.M, 55, 4f, true, 10, 0.5f),
-                ("robot", 330, 9f, ItemSize.L, 20, 5f, true, 8, 0.5f),
-                ("glass_unicorn", 420, 2f, ItemSize.M, 95, 7f, false, 6, 0.1f)
+                ("plush_bear", 80, 0.7f, ItemSize.S, 5, 0f, false, 1, 18, 0.5f),
+                ("toy_car", 110, 1.2f, ItemSize.S, 35, 3f, false, 1, 16, 0.5f),
+                ("music_box", 180, 1.5f, ItemSize.S, 75, 5f, false, 1, 12, 0.5f),
+                ("dollhouse", 260, 5f, ItemSize.M, 55, 4f, true, 1, 10, 0.5f),
+                ("robot", 330, 9f, ItemSize.L, 20, 5f, true, 1, 8, 0.5f),
+                ("glass_unicorn", 420, 2f, ItemSize.M, 95, 7f, false, 1, 6, 0.1f),
+                ("giant_block", 620, 22f, ItemSize.XL, 10, 7f, true, 2, 4, 0.5f)
             };
             var result = new Dictionary<string, ItemDefinition>();
             foreach (var entry in data)
@@ -147,7 +152,7 @@ namespace Game1.Editor
                 serialized.FindProperty("spawnWeight").intValue = entry.spawnWeight;
                 serialized.FindProperty("durability").intValue = 100;
                 serialized.FindProperty("brokenValueMultiplier").floatValue = entry.brokenMultiplier;
-                serialized.FindProperty("requiredCarriers").intValue = 1;
+                serialized.FindProperty("requiredCarriers").intValue = entry.carriers;
                 serialized.FindProperty("throwable").boolValue = !entry.twoHanded;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
                 asset.Validate();
@@ -172,8 +177,9 @@ namespace Game1.Editor
                 , ["settings.graphics.reset"] = new[] { "画面設定をリセット", "Reset Graphics", "重置画面设置", "그래픽 초기화" }
             };
             var locales = new[] { ("ja-JP", "Japanese (Japan)"), ("en-US", "English (US)"), ("zh-Hans", "Chinese (Simplified)"), ("ko-KR", "Korean") };
-            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection("UI") ??
-                                               LocalizationEditorSettings.CreateStringTableCollection("UI", Root + "/Localization");
+            StringTableCollection collection = LocalizationEditorSettings.GetStringTableCollection("UI");
+            if (collection != null) return;
+            collection = LocalizationEditorSettings.CreateStringTableCollection("UI", Root + "/Localization");
             for (int localeIndex = 0; localeIndex < locales.Length; localeIndex++)
             {
                 Locale locale = FindOrCreateLocale(locales[localeIndex].Item1, locales[localeIndex].Item2);
@@ -201,10 +207,10 @@ namespace Game1.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             GameObject systems = new("Systems");
             LocalRunController run = systems.AddComponent<LocalRunController>();
-            SetObject(run, "config", config);
+            run.Configure(config);
             GraphicsSettingsService graphics = systems.AddComponent<GraphicsSettingsService>();
-            SetObject(graphics, "defaultPreset", defaultPreset);
-            SetObject(graphics, "safePreset", safePreset);
+            graphics.Configure(defaultPreset, safePreset);
+            CreateNetworkFoundation(systems, config);
 
             LocalPlayerController player = CreatePlayer();
             PlayerInteractor interactor = player.gameObject.AddComponent<PlayerInteractor>();
@@ -224,9 +230,9 @@ namespace Game1.Editor
             }
 
             SellCart cart = CreateTrigger<SellCart>("SellCart", new Vector3(-5f, 0.75f, -5f), new Vector3(3f, 1.5f, 3f), new Color(0.12f, 0.55f, 0.18f, 0.5f));
-            SetObject(cart, "run", run);
+            cart.Configure(run);
             ExitZone exit = CreateTrigger<ExitZone>("ExitZone", new Vector3(0f, 1.5f, -8f), new Vector3(5f, 3f, 2f), new Color(0.1f, 0.4f, 0.8f, 0.35f));
-            SetObject(exit, "run", run);
+            exit.Configure(run);
 
             int index = 0;
             foreach (ItemDefinition definition in definitions.Values)
@@ -236,14 +242,11 @@ namespace Game1.Editor
             }
             CreateItem(definitions["glass_unicorn"], new Vector3(12f, 1f, 25f));
             CreateItem(definitions["robot"], new Vector3(-12f, 1f, 25f));
+            CreateItem(definitions["giant_block"], new Vector3(0f, 1f, 28f));
 
             GameObject hudObject = new("HUD");
             PrototypeHud hud = hudObject.AddComponent<PrototypeHud>();
-            SetObject(hud, "run", run);
-            SetObject(hud, "player", player);
-            SetObject(hud, "interactor", interactor);
-            SetObject(hud, "exitZone", exit);
-            SetObject(hud, "graphics", graphics);
+            hud.Configure(run, player, interactor, exit, graphics);
 
             RenderSettings.ambientLight = new Color(0.08f, 0.09f, 0.12f);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -275,9 +278,7 @@ namespace Game1.Editor
             light.spotAngle = 35f;
             light.intensity = 2f;
             light.enabled = false;
-            SetObject(controller, "viewCamera", camera);
-            SetObject(controller, "carryAnchor", anchor.transform);
-            SetObject(controller, "flashlight", light);
+            controller.Configure(camera, anchor.transform, light);
             return controller;
         }
 
@@ -290,7 +291,11 @@ namespace Game1.Editor
             Rigidbody body = item.AddComponent<Rigidbody>();
             body.mass = definition.WeightKg;
             PickupItem pickup = item.AddComponent<PickupItem>();
-            SetObject(pickup, "definition", definition);
+            pickup.Configure(definition);
+            item.AddComponent<NetworkObject>();
+            item.AddComponent<NetworkTransform>();
+            NetworkCarryItem networkItem = item.AddComponent<NetworkCarryItem>();
+            networkItem.Configure(definition);
         }
 
         private static void CreateDoor()
@@ -301,7 +306,41 @@ namespace Game1.Editor
             GameObject panel = CreateBox("DoorPanel", new Vector3(0f, 1.5f, 0f), new Vector3(3f, 3f, 0.25f), new Color(0.28f, 0.2f, 0.12f));
             panel.transform.SetParent(pivot.transform, true);
             panel.transform.localPosition = new Vector3(1.5f, 1.5f, 0f);
-            SetObject(door, "pivot", pivot.transform);
+            door.Configure(pivot.transform);
+            pivot.AddComponent<NetworkObject>();
+            NetworkDoorState networkDoor = pivot.AddComponent<NetworkDoorState>();
+            networkDoor.Configure(pivot.transform);
+        }
+
+        private static void CreateNetworkFoundation(GameObject systems, RunConfig config)
+        {
+            NetworkManager manager = systems.AddComponent<NetworkManager>();
+            UnityTransport transport = systems.AddComponent<UnityTransport>();
+            NetworkSessionMenu menu = systems.AddComponent<NetworkSessionMenu>();
+            menu.Configure(manager, transport);
+            NetworkCoopSmokeDriver smoke = systems.AddComponent<NetworkCoopSmokeDriver>();
+            smoke.Configure(manager);
+            manager.NetworkConfig.NetworkTransport = transport;
+            manager.NetworkConfig.PlayerPrefab = CreateNetworkPlayerPrefab();
+
+            NetworkObject stateObject = systems.AddComponent<NetworkObject>();
+            NetworkStageState stage = systems.AddComponent<NetworkStageState>();
+            stage.Configure(config);
+        }
+
+        private static GameObject CreateNetworkPlayerPrefab()
+        {
+            const string path = DataPath + "/NetworkPlayer.prefab";
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+            GameObject avatar = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            avatar.name = "NetworkPlayer";
+            avatar.AddComponent<NetworkObject>();
+            avatar.AddComponent<NetworkTransform>();
+            avatar.AddComponent<NetworkPlayerAvatar>();
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(avatar, path);
+            Object.DestroyImmediate(avatar);
+            return prefab;
         }
 
         private static GameObject CreateBox(string name, Vector3 position, Vector3 scale, Color color)
@@ -331,8 +370,12 @@ namespace Game1.Editor
         private static void SetObject(Object target, string propertyName, Object value)
         {
             SerializedObject serialized = new(target);
-            serialized.FindProperty(propertyName).objectReferenceValue = value;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            serialized.Update();
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null) throw new System.InvalidOperationException($"Serialized property '{propertyName}' was not found on {target.GetType().Name}.");
+            property.objectReferenceValue = value;
+            serialized.ApplyModifiedProperties();
+            EditorUtility.SetDirty(target);
         }
 
         private static void EnsureFolder(string path)
