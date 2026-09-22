@@ -4,6 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
-  m_configObjects: {}
+  m_Scenes:
+  - enabled: 1
+    path: Assets/GAME1/Scenes/Phase1Prototype.unity
+    guid: f3f1b329e349f1940b57d230da6d2f22
+  m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: dcd2999a08e260e46b823a75538fc6e7, type: 2}
   m_UseUCBPForAssetBundles: 0

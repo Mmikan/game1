@@ -1,0 +1,14 @@
+{
+  "name": "GAME1.EditModeTests",
+  "rootNamespace": "Game1.Tests",
+  "references": [
+    "GAME1.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

@@ -8,12 +8,14 @@
 
 ## 開発状況
 
-Phase 1の環境準備中。プレイ可能なUnityプロジェクトや検証済みビルドはまだありません。
+Phase 1のローカルMVPが完成し、UnityテストとWindows Standaloneビルドを検証済みです。
 
 - Unity 6.3 LTS / URP / C#
 - Unity Input System / Unity Localization
 - NGO + Unity Transportは基盤のみ。ネットワーク動作はPhase 2。
 - 作業ブランチ: `feature/phase-01-foundation`
 - [Phase 1の作業・検証項目](Docs/Development/phase-01.md)
+- Unityメニュー `GAME1/Build Phase 1 Prototype` で検証シーンを再生成できます。
+- Unityメニュー `GAME1/Build Windows Prototype` で `Builds/Windows/GAME1.exe` を生成できます。
 
 各Phaseはコンパイル、テスト、Windowsビルド、受入確認後に完了とし、commit / pushして結果を報告する。未検証の変更はmainに統合しない。
