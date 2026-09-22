@@ -1,0 +1,14 @@
+{
+  "name": "GAME1.Editor",
+  "rootNamespace": "Game1.Editor",
+  "references": [
+    "GAME1.Runtime",
+    "Unity.Localization",
+    "Unity.Localization.Editor",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

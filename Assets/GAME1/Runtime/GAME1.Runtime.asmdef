@@ -1,6 +1,9 @@
 {
   "name": "GAME1.Runtime",
   "rootNamespace": "Game1",
-  "references": [],
+  "references": [
+    "Unity.InputSystem",
+    "Unity.Localization"
+  ],
   "autoReferenced": true
 }
