@@ -7,6 +7,7 @@ namespace Game1.Gameplay
     public sealed class SellCart : MonoBehaviour
     {
         [SerializeField] private LocalRunController run;
+        public void Configure(LocalRunController value) => run = value;
 
         private void Reset() => GetComponent<Collider>().isTrigger = true;
 

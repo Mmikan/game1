@@ -17,6 +17,7 @@ namespace Game1.Items
         public bool IsSold => sold;
         public bool IsBroken => durability <= 0;
         public int CurrentDurability => durability;
+        public void Configure(ItemDefinition value) => definition = value;
 
         private void Awake()
         {

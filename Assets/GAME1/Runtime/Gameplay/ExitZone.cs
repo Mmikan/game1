@@ -11,6 +11,7 @@ namespace Game1.Gameplay
         private LocalPlayerController occupant;
 
         public float Progress01 => Mathf.Clamp01(progress / requiredSeconds);
+        public void Configure(LocalRunController value) => run = value;
 
         private void Reset() => GetComponent<Collider>().isTrigger = true;
 

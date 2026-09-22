@@ -13,6 +13,14 @@ namespace Game1.Gameplay
         [SerializeField] private GraphicsSettingsService graphics;
         private GUIStyle labelStyle;
         private GUIStyle centerStyle;
+        public void Configure(LocalRunController runValue, LocalPlayerController playerValue, PlayerInteractor interactorValue, ExitZone exitValue, GraphicsSettingsService graphicsValue)
+        {
+            run = runValue;
+            player = playerValue;
+            interactor = interactorValue;
+            exitZone = exitValue;
+            graphics = graphicsValue;
+        }
 
         private void OnGUI()
         {

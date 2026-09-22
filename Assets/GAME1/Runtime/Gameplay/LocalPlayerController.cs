@@ -33,6 +33,12 @@ namespace Game1.Gameplay
         public PickupItem HeldItem { get; private set; }
         public Camera ViewCamera => viewCamera;
         public float Stamina => stamina;
+        public void Configure(Camera cameraValue, Transform anchorValue, Light lightValue)
+        {
+            viewCamera = cameraValue;
+            carryAnchor = anchorValue;
+            flashlight = lightValue;
+        }
 
         private void Awake()
         {

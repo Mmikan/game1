@@ -17,6 +17,11 @@ namespace Game1.Config
 
         public bool IsAwaitingConfirmation => pendingDeadline > 0f;
         public float ConfirmationSecondsRemaining => IsAwaitingConfirmation ? Mathf.Max(0f, pendingDeadline - Time.unscaledTime) : 0f;
+        public void Configure(GraphicsPresetDefinition defaultValue, GraphicsPresetDefinition safeValue)
+        {
+            defaultPreset = defaultValue;
+            safePreset = safeValue;
+        }
 
         private string SavePath => Path.Combine(Application.persistentDataPath, "graphics.json");
 
