@@ -1,0 +1,10 @@
+{
+  "name": "GAME1.PlayModeTests",
+  "rootNamespace": "Game1.Tests",
+  "references": [
+    "GAME1.Runtime"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
