@@ -2,6 +2,7 @@ using Game1.Config;
 using Game1.Items;
 using Game1.Gameplay;
 using Game1.Network;
+using Game1.Debuffs;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -74,6 +75,44 @@ namespace Game1.Tests
         {
             Assert.IsTrue(CoopAuthorityRules.CanStartSharedCarry(Vector3.left * 0.5f, Vector3.right * 0.5f, Vector3.zero));
             Assert.IsFalse(CoopAuthorityRules.CanStartSharedCarry(Vector3.left * 2f, Vector3.right * 2f, Vector3.zero));
+        }
+
+        [Test]
+        public void DebuffDefinition_RejectsForbiddenPair()
+        {
+            DebuffDefinition tunnel = ScriptableObject.CreateInstance<DebuffDefinition>();
+            tunnel.Configure(DebuffKind.TunnelVision, SoloFallback.HandMap, DebuffKind.LostVoice);
+            Assert.IsFalse(tunnel.IsCompatibleWith(DebuffKind.LostVoice));
+            Assert.IsTrue(tunnel.IsCompatibleWith(DebuffKind.Tremor));
+            Object.DestroyImmediate(tunnel);
+        }
+
+        [Test]
+        public void DebuffAllocator_AssignsCompatibleDebuff()
+        {
+            DebuffDefinition tunnel = ScriptableObject.CreateInstance<DebuffDefinition>();
+            DebuffDefinition breath = ScriptableObject.CreateInstance<DebuffDefinition>();
+            tunnel.Configure(DebuffKind.TunnelVision, SoloFallback.HandMap, DebuffKind.LostVoice);
+            breath.Configure(DebuffKind.HeavyBreath, SoloFallback.CrouchRecovery, DebuffKind.BackPain);
+            Assert.IsTrue(DebuffAllocator.TryAssign(new[] { tunnel, breath }, new[] { DebuffKind.LostVoice }, new System.Random(1), out DebuffDefinition assigned));
+            Assert.AreEqual(DebuffKind.HeavyBreath, assigned.Kind);
+            Object.DestroyImmediate(tunnel);
+            Object.DestroyImmediate(breath);
+        }
+
+        [TestCase(DebuffKind.Tremor, 0.18f, 0.04f)]
+        [TestCase(DebuffKind.HeavyBreath, 35f, 4.6f)]
+        [TestCase(DebuffKind.FragileGrip, 0.25f, 0f)]
+        [TestCase(DebuffKind.HearingLoss, -18f, 0f)]
+        [TestCase(DebuffKind.BackPain, 2.5f, 3.4f)]
+        [TestCase(DebuffKind.Balance, 0.75f, 1f)]
+        public void DebuffDefinition_StoresSpecificationTuning(DebuffKind kind, float primary, float assisted)
+        {
+            DebuffDefinition definition = ScriptableObject.CreateInstance<DebuffDefinition>();
+            definition.Configure(kind, SoloFallback.None);
+            Assert.AreEqual(primary, definition.Tuning.primary, 0.001f);
+            Assert.AreEqual(assisted, definition.Tuning.assisted, 0.001f);
+            Object.DestroyImmediate(definition);
         }
     }
 }
