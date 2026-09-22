@@ -8,13 +8,14 @@
 
 ## 開発状況
 
-Phase 1のローカルMVPが完成し、UnityテストとWindows Standaloneビルドを検証済みです。
+Phase 2まで完成し、ローカルMVPにHost Authorityのネットワーク協力機能を追加しました。Unityテスト、Windows Standalone、Host / Clientの2インスタンス動作を検証済みです。
 
 - Unity 6.3 LTS / URP / C#
 - Unity Input System / Unity Localization
 - NGO + Unity Transportは基盤のみ。ネットワーク動作はPhase 2。
-- 作業ブランチ: `feature/phase-01-foundation`
+- 作業ブランチ: `feature/phase-02-network-coop`
 - [Phase 1の作業・検証項目](Docs/Development/phase-01.md)
+- [Phase 2の作業・検証項目](Docs/Development/phase-02.md)
 - Unityメニュー `GAME1/Build Phase 1 Prototype` で検証シーンを再生成できます。
 - Unityメニュー `GAME1/Build Windows Prototype` で `Builds/Windows/GAME1.exe` を生成できます。
 

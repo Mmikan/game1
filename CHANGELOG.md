@@ -2,6 +2,13 @@
 
 ## Unreleased — Phase 1
 
+### Phase 2 Added
+- NGO + Unity TransportによるHost / Client接続画面とコマンドライン起動。
+- Host検証付きPlayer入力、ライト、Stage Result同期。
+- 2人共同運搬、受け渡し、救助、支える、Door保持。
+- Client切断時の共同運搬解除とアイテム落下。
+- 2インスタンス自動スモーク検証。
+
 ### Added
 - Unity向けGit除外設定と大容量アセットのLFS属性。
 - 実装・受入チェックリスト。
