@@ -455,6 +455,7 @@ namespace Game1.Editor
             systems.AddComponent<ClientRescueScenario>();
             systems.AddComponent<EnemyInteractionScenario>();
             systems.AddComponent<MenuInputScenario>();
+            systems.AddComponent<CoopInputScenario>();
             smoke.Configure(manager);
             NetworkDebuffDirector debuffDirector = systems.AddComponent<NetworkDebuffDirector>();
             debuffDirector.Configure(manager, new List<DebuffDefinition>(debuffs.Values).ToArray());

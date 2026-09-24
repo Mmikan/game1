@@ -96,6 +96,29 @@ namespace Game1.Enemies
             Check(!door.TryToggleOnServer(players[0].OwnerClientId) && door.OpenAngle.Value == 100f, "held_door_cannot_close");
             door.SetHeldServerRpc(false);
             Check(door.TryToggleOnServer(players[0].OwnerClientId) && door.OpenAngle.Value == 0f, "released_door_closes");
+            agent.Warp(new Vector3(0f, 0f, 15f));
+            collector.transform.rotation = Quaternion.identity;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+            players[0].transform.position = new Vector3(-1f, 0f, 19f);
+            players[1].transform.position = new Vector3(1f, 0f, 21f);
+            var cargo = items.First(i => i.Definition.ItemId == "toy_car");
+            cargo.transform.position = players[1].transform.position + Vector3.up;
+            Check(cargo.TryRequestCarryOnServer(players[1].OwnerClientId), "priority_fixture_carry_acquired");
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.3f);
+            Check(collector.State == EnemyState.Chase && Vector3.Distance(agent.destination, players[1].transform.position) < 0.4f,
+                  "collector_prefers_farther_visible_carrier");
+            GameplayNoise.Emit(new Vector3(0f, 0f, 12f), 10f, NoiseKind.Drop);
+            yield return new WaitForSeconds(0.15f);
+            Check(collector.State == EnemyState.Chase && Vector3.Distance(agent.destination, players[1].transform.position) < 0.4f,
+                  "visible_player_outranks_noise");
+            cargo.ReleaseOnServer();
+            yield return new WaitForSeconds(0.3f);
+            Check(Vector3.Distance(agent.destination, players[0].transform.position) < 0.4f,
+                  "collector_returns_to_nearest_after_drop");
+            agent.updatePosition = true;
+            agent.updateRotation = true;
             Debug.Log($"GAME1_INTERACTION_COMPLETE success={!failed}");
             Application.Quit(failed ? 1 : 0);
         }

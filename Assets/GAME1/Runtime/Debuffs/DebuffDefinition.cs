@@ -46,13 +46,14 @@ namespace Game1.Debuffs
         public void Configure(DebuffKind value, SoloFallback fallback, params DebuffKind[] incompatible)
         {
             kind = value;
-            localizationKey = $"debuff.{ToSnakeCase(value.ToString())}.name";
+            localizationKey = KeyFor(value);
             soloFallback = fallback;
             incompatibleWith = incompatible ?? Array.Empty<DebuffKind>();
             tuning = DefaultTuning(value);
         }
 
         public bool IsCompatibleWith(DebuffKind other) => Array.IndexOf(incompatibleWith, other) < 0;
+        public static string KeyFor(DebuffKind value) => $"debuff.{ToSnakeCase(value.ToString())}.name";
 
         private static DebuffTuning DefaultTuning(DebuffKind value) => value switch
         {

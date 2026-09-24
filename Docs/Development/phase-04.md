@@ -20,10 +20,10 @@ Host-controlled NavMesh enemies and replicated state, separate audible cues and 
 
 ## Still required before Phase 4 completion
 
-- Broaden target-selection coverage (carrying players and visible-player precedence). Inspection/theft interruption, ordinary-noise priority over Ping/curse, and dynamic obstacle navigation now pass integration checks.
+- Target selection now has coverage for carrying-player preference, nearest-player fallback after release and visible-player precedence over noise; extend combined moving-player/light cases during manual acceptance.
 - Black-block speed increase and restoration, plus shared clown 5m noise, are verified. Further held-item visual/input acceptance remains.
 - Verify remaining safe-zone edge cases and moving-light scenarios. InspectItem-to-Investigate, Idle noise Detect, near-range downed repeat attack and startup floor-stock noise have dedicated checks.
-- Complete manual input/online HUD acceptance, support following/input binding and door controls. Client-originated rescue/damage interruption and support distance expiry now pass. Rescue progress has a shared HUD; its visual placement in multiplayer still needs checking. Proxy player appearance and enemy models remain placeholders.
+- Complete manual input and held-door input flows. Support/rescue E-ray selection and disconnect recovery pass game-side synthetic input checks; Host support/rescue HUD images were inspected. Client-side HUD visual placement and held-item visuals remain to be checked. Proxy player appearance and enemy models remain placeholders.
 - Resolve inherited Phase 3 debt separately: actual map/beacon/emergency-light/insulation interactions and complete online debuff integration. Earlier Phase 3 completion claims overstate those features.
 
 This checkpoint is suitable for code review and continuation, not a claim that all Phase 4 acceptance criteria passed. Do not begin Phase 5 based on this document.
@@ -92,3 +92,15 @@ Final checkpoint: Logs/phase4-stability-host.log passed all 20 Host integration 
 - Logs/phase4-menu-build.log: latest Windows build passed (99,447,423 bytes).
 - Logs/phase4-menu-input.log: four game-side synthetic keyboard checks passed (opens, blocks_movement, closes, resumes_movement), GAME1_MENU_COMPLETE success=True. This is in-engine input acceptance, not manual desktop keyboard testing. Support E ray selection and multiplayer support HUD still need input/visual acceptance.
 - Codex five-hour usage reached 85% after validation. Preserve this checkpoint uncommitted: no commit/push/stash/reset/discard at cutoff. Last pushed source checkpoint remains e3c89a8. Resume by reviewing and committing these tested changes, then completing remaining cooperation input/HUD acceptance. The external reviewer prompt still contains the old repository spelling; verify its review target before trusting its findings.
+
+## Cooperative E input and HUD checkpoint (2026-09-25)
+
+- Previous support/Esc implementation was reviewed and pushed as 9e68a52 after its saved validation results were checked.
+- Added opt-in CoopInputScenario: graphic Host plus headless Client, synthetic E key events through the real input/raycast/RPC path, support start/cancel, held rescue progress/completion, then shutdown/local camera recovery. No desktop key events are injected.
+- Visual inspection exposed the online HUD showing the local solo debuff. HUD now uses the owner avatar's replicated Debuff and shared DebuffDefinition.KeyFor mapping. Solo-only tape/drop/debug overlays are not drawn for the disabled solo controller during networking. This is a HUD correction, not completion of all online debuff mechanics.
+- Added collector target-priority checks: farther visible carrier is preferred, visible carrier outranks ordinary noise, nearest player is selected after item release. Fixture disables agent transform updates during target selection to isolate perception; actual navigation is checked separately.
+- Logs/phase4-hud-priority-build.log: Windows build successful, 99,451,859 bytes.
+- Logs/phase4-coop-input-fixed-host.log: all 5 checks pass, GAME1_COOP_INPUT_COMPLETE success=True. The previous run also passed before the HUD fix.
+- Logs/phase4-priority-host.log: all 18 checks pass, GAME1_INTERACTION_COMPLETE success=True, including prior interruption/door checks plus target priority.
+- Logs/phase4-coop-hud-support.png and phase4-coop-hud-rescue.png were inspected for layout. Logs/phase4-coop-hud-fixed-rescue.png confirms the localized HeavyBreath name matches the Host assignment and rescue progress is readable at the top center. Player meshes remain placeholders.
+- This closes synthetic cooperative E-input, Host HUD placement, disconnect-camera and basic target-priority gaps. Phase 4 remains in progress; do not claim manual mouse/keyboard acceptance or Phase 3 debuff completion.- Final startup-order check: waiting for GAME1_NET_CONNECTED client=0 before launching Client produces a clean connection (Logs/phase4-coop-ready-client.log has no socket recovery/exception messages). Logs/phase4-coop-ready-host.log repeats all five cooperative input checks successfully. The preceding simultaneous-start run did recover from two socket messages; do not erase that evidence.

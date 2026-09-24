@@ -92,7 +92,9 @@ namespace Game1.Gameplay
                 graphics.ResetGraphics();
 
             PlayerDebuffController debuff = player.GetComponent<PlayerDebuffController>();
-            if (debuff != null && debuff.Kind != DebuffKind.None)
+            if (avatar != null && avatar.Debuff.Value != DebuffKind.None)
+                GUI.Label(new Rect(24, 88, 560, 36), $"{Text("hud.debuff")}: {Text(DebuffDefinition.KeyFor(avatar.Debuff.Value))}", labelStyle);
+            if (!online && debuff != null && debuff.Kind != DebuffKind.None)
             {
                 GUI.Label(new Rect(24, 88, 560, 36), $"{Text("hud.debuff")}: {Text(debuff.Definition.LocalizationKey)}", labelStyle);
                 if (Debug.isDebugBuild) GUI.Label(new Rect(24, 120, 700, 30), Text("hud.debuff.debug_cycle"), labelStyle);
