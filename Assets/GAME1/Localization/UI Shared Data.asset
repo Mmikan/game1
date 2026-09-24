@@ -127,6 +127,10 @@ MonoBehaviour:
     m_Key: hud.player.rescue
     m_Metadata:
       m_Items: []
+  - m_Id: 956952412479488
+    m_Key: hud.player.supporting
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

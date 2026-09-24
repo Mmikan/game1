@@ -60,6 +60,8 @@ namespace Game1.Network
         public override void OnNetworkDespawn()
         {
             if (localView == null) return;
+            localView.transform.SetPositionAndRotation(transform.position, Quaternion.Euler(0f, yaw, 0f));
+            localView.ViewCamera.transform.localPosition = Vector3.up * 1.62f;
             localView.enabled = true;
             localView.GetComponent<CharacterController>().enabled = true;
             localView.GetComponent<PlayerInteractor>().enabled = true;
@@ -104,7 +106,7 @@ namespace Game1.Network
                     SupportingClientId.Value = CoopAuthorityRules.NoClient;
             }
             if (IsServer && LifeState.Value == PlayerLifeState.Downed && Time.time >= downedUntil) SetLifeStateOnServer(PlayerLifeState.Dead);
-            if (IsOwner && !Application.isBatchMode && Keyboard.current != null && LifeState.Value == PlayerLifeState.Alive)
+            if (IsOwner && !Application.isBatchMode && !NetworkSessionMenu.MenuOpen && Keyboard.current != null && LifeState.Value == PlayerLifeState.Alive)
             {
                 if (Mouse.current != null)
                 {
@@ -113,6 +115,7 @@ namespace Game1.Network
                 }
                 if (Keyboard.current.fKey.wasPressedThisFrame) SetFlashlightServerRpc(!FlashlightOn.Value);
                 if (Keyboard.current.eKey.wasPressedThisFrame) InteractServerRpc();
+                if (Keyboard.current.cKey.wasPressedThisFrame) SetSupportServerRpc(0, false);
                 if (Keyboard.current.qKey.wasPressedThisFrame) PingServerRpc();
                 if (Mouse.current != null && Mouse.current.rightButton.wasReleasedThisFrame) ThrowServerRpc();
             }
@@ -122,14 +125,23 @@ namespace Game1.Network
                 Vector2 input = new(
                     (Keyboard.current.dKey.isPressed ? 1f : 0f) - (Keyboard.current.aKey.isPressed ? 1f : 0f),
                     (Keyboard.current.wKey.isPressed ? 1f : 0f) - (Keyboard.current.sKey.isPressed ? 1f : 0f));
-                SubmitInputServerRpc(Vector2.ClampMagnitude(input, 1f), Keyboard.current.leftShiftKey.isPressed);
+                SubmitInputServerRpc(NetworkSessionMenu.MenuOpen ? Vector2.zero : Vector2.ClampMagnitude(input, 1f), !NetworkSessionMenu.MenuOpen && Keyboard.current.leftShiftKey.isPressed);
                 SubmitLookServerRpc(Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward);
-                SetInteractHeldServerRpc(Keyboard.current.eKey.isPressed);
+                SetInteractHeldServerRpc(!NetworkSessionMenu.MenuOpen && Keyboard.current.eKey.isPressed);
+                if (NetworkSessionMenu.MenuOpen && SupportingClientId.Value != CoopAuthorityRules.NoClient) SetSupportServerRpc(0, false);
             }
 
             if (IsServer && LifeState.Value == PlayerLifeState.Alive)
             {
                 if (Time.time - lastInputAt > 0.5f) serverInput = Vector2.zero;
+                if (SupportingClientId.Value != CoopAuthorityRules.NoClient && TryGetPlayer(SupportingClientId.Value, out NetworkPlayerAvatar supported))
+                {
+                    Vector3 offset = supported.transform.position - supported.transform.forward * 0.85f - transform.position;
+                    offset.y = 0f;
+                    if (motor != null) motor.Move(Vector3.ClampMagnitude(offset, 4.6f * Time.deltaTime) + Vector3.down * (2f * Time.deltaTime));
+                    Stamina.Value = Mathf.Min(100f, Stamina.Value + 16f * Time.deltaTime);
+                    return;
+                }
                 bool sprinting = wantsSprint && serverInput.y > 0f && Stamina.Value > 0f && !NetworkCarryItem.HasItem(OwnerClientId);
                 Stamina.Value = Mathf.Clamp(Stamina.Value + (sprinting ? -(Debuff.Value == DebuffKind.HeavyBreath ? 35f : 20f) : Debuff.Value == DebuffKind.HeavyBreath ? 8f : 16f) * Time.deltaTime, 0f, 100f);
                 Vector3 movement = transform.right * serverInput.x + transform.forward * serverInput.y;
@@ -150,6 +162,7 @@ namespace Game1.Network
         {
             interactHeldUntil = Time.time + 0.5f;
             if (LifeState.Value != PlayerLifeState.Alive) return;
+            if (SupportingClientId.Value != CoopAuthorityRules.NoClient) { SupportingClientId.Value = CoopAuthorityRules.NoClient; return; }
             foreach (NetworkCarryItem item in FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None))
                 if (item.PrimaryCarrier.Value == OwnerClientId || item.SecondaryCarrier.Value == OwnerClientId)
                 { item.ReleaseOnServer(); return; }
@@ -161,8 +174,11 @@ namespace Game1.Network
                 if (hit.transform.IsChildOf(transform)) continue;
                 if (hit.collider.GetComponentInParent<NetworkCarryItem>() is NetworkCarryItem item) item.TryRequestCarryOnServer(OwnerClientId);
                 else if (hit.collider.GetComponentInParent<NetworkDoorState>() is NetworkDoorState door) door.TryToggleOnServer(OwnerClientId);
-                else if (hit.collider.GetComponentInParent<NetworkPlayerAvatar>() is NetworkPlayerAvatar ally && ally.LifeState.Value == PlayerLifeState.Downed)
-                    BeginRescue(ally);
+                else if (hit.collider.GetComponentInParent<NetworkPlayerAvatar>() is NetworkPlayerAvatar ally)
+                {
+                    if (ally.LifeState.Value == PlayerLifeState.Downed) BeginRescue(ally);
+                    else TryStartSupportOnServer(ally);
+                }
                 break;
             }
         }
@@ -244,9 +260,21 @@ namespace Game1.Network
                 return;
             }
             if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetNetworkObjectId, out NetworkObject targetObject) ||
-                !targetObject.TryGetComponent(out NetworkPlayerAvatar target) || target == supporter || target.LifeState.Value != PlayerLifeState.Alive ||
-                !CoopAuthorityRules.CanInteract(supporter.LifeState.Value, supporter.transform.position, target.transform.position, 1.2f)) return;
-            supporter.SupportingClientId.Value = target.OwnerClientId;
+                !targetObject.TryGetComponent(out NetworkPlayerAvatar target)) return;
+            supporter.TryStartSupportOnServer(target);
+        }
+
+        public bool TryStartSupportOnServer(NetworkPlayerAvatar target)
+        {
+            if (!IsServer || target == null || !target.IsSpawned || target == this || target.LifeState.Value != PlayerLifeState.Alive ||
+                SupportingClientId.Value != CoopAuthorityRules.NoClient || target.SupportingClientId.Value != CoopAuthorityRules.NoClient ||
+                IsSupportedByAlly() || target.IsSupportedByAlly() || NetworkCarryItem.HasItem(OwnerClientId) ||
+                !CoopAuthorityRules.CanInteract(LifeState.Value, transform.position, target.transform.position, 1.2f)) return false;
+            Vector3 offset = transform.position - target.transform.position;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < 0.01f || Vector3.Dot(target.transform.forward, offset.normalized) > -0.5f) return false;
+            SupportingClientId.Value = target.OwnerClientId;
+            return true;
         }
 
         public void MarkDisconnected()

@@ -2,11 +2,22 @@ using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using System;
+using UnityEngine.InputSystem;
 
 namespace Game1.Network
 {
     public sealed class NetworkSessionMenu : MonoBehaviour
     {
+        public static bool MenuOpen { get; private set; }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetMenu() => MenuOpen = false;
+        private void Update()
+        {
+            if (Application.isBatchMode || Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
+            MenuOpen = !MenuOpen;
+            Cursor.lockState = MenuOpen ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = MenuOpen;
+        }
         [SerializeField] private NetworkManager manager;
         [SerializeField] private UnityTransport transport;
         [SerializeField] private string address = "127.0.0.1";
@@ -36,6 +47,7 @@ namespace Game1.Network
         private void OnGUI()
         {
             if (manager == null || transport == null) return;
+            if (!MenuOpen) { GUI.Label(new Rect(Screen.width - 250, 18, 230, 30), "[Esc] Menu"); return; }
             GUILayout.BeginArea(new Rect(Screen.width - 250, 18, 230, 150), GUI.skin.box);
             GUILayout.Label(manager.IsListening ? (manager.IsHost ? "Host running" : "Client connected") : "Network offline");
             if (!manager.IsListening)

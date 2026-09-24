@@ -68,6 +68,7 @@ namespace Game1.Network
             rescuer.SetInteractHeldServerRpc(false);
             Debug.Log($"GAME1_COOP_SMOKE_RESCUED={target.LifeState.Value == Game1.Gameplay.PlayerLifeState.Alive}");
             target.SetDebuffOnServer(Game1.Debuffs.DebuffKind.HeavyBreath);
+            target.transform.position = rescuer.transform.position + Vector3.forward;
             rescuer.SetSupportServerRpc(target.NetworkObjectId, true);
             yield return null;
             Debug.Log($"GAME1_COOP_SMOKE_DEBUFF_ASSISTED={target.IsSupportedByAlly()}");

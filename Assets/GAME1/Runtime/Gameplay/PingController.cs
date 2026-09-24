@@ -23,7 +23,7 @@ namespace Game1.Gameplay
 
         private void Update()
         {
-            if (Keyboard.current == null || !Keyboard.current.qKey.wasPressedThisFrame || Time.time < nextAllowedTime) return;
+            if (Game1.Network.NetworkSessionMenu.MenuOpen || Keyboard.current == null || !Keyboard.current.qKey.wasPressedThisFrame || Time.time < nextAllowedTime) return;
             nextAllowedTime = Time.time + cooldown;
             float effectiveRange = debuff != null ? debuff.PingRange : range;
             Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);

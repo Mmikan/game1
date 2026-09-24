@@ -83,6 +83,7 @@ namespace Game1.Gameplay
                 FindFirstObjectByType<LocalRunController>()?.FailNoSurvivors();
             }
             if (LifeState != PlayerLifeState.Alive) return;
+            if (Game1.Network.NetworkSessionMenu.MenuOpen) { movementInput = Vector2.zero; return; }
             UpdateLook();
             UpdateMovement();
             UpdateActions();

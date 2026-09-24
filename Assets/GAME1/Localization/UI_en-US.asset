@@ -1022,6 +1022,10 @@ MonoBehaviour:
     m_Localized: Rescuing (hold E)
     m_Metadata:
       m_Items: []
+  - m_Id: 956952412479488
+    m_Localized: Supporting teammate [E / C] Release
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

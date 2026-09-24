@@ -29,7 +29,7 @@ namespace Game1.Gameplay
         {
             if (Keyboard.current == null || !Keyboard.current.eKey.isPressed) consumedPress = false;
             Current = FindTarget();
-            if (consumedPress || player.LifeState != PlayerLifeState.Alive || Keyboard.current == null || Current?.CanInteract(player) != true || !Keyboard.current.eKey.isPressed)
+            if (Game1.Network.NetworkSessionMenu.MenuOpen || consumedPress || player.LifeState != PlayerLifeState.Alive || Keyboard.current == null || Current?.CanInteract(player) != true || !Keyboard.current.eKey.isPressed)
             {
                 heldTarget = null;
                 heldTime = 0f;

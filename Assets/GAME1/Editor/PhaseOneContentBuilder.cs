@@ -223,6 +223,7 @@ namespace Game1.Editor
                 ["hud.player.downed"] = new[] { "ダウン中 — 味方の救助が必要", "Downed — wait for a teammate to rescue you", "已倒地 — 等待队友救援", "쓰러짐 — 팀원의 구조가 필요합니다" },
                 ["hud.player.dead"] = new[] { "死亡 — このラウンドでは復活できません", "Dead — no respawn this round", "已死亡 — 本轮无法复活", "사망 — 이번 라운드에는 부활할 수 없습니다" },
                 ["hud.player.rescue"] = new[] { "救助中（E長押し）", "Rescuing (hold E)", "救援中（按住 E）", "구조 중 (E 길게 누르기)" },
+                ["hud.player.supporting"] = new[] { "味方を支えています [E / C] 解除", "Supporting teammate [E / C] Release", "正在支撑队友 [E / C] 取消", "팀원 부축 중 [E / C] 해제" },
                 ["hud.interact.pick_up"] = new[] { "拾う", "Pick up", "拾取", "줍기" },
                 ["hud.interact.open_door"] = new[] { "ドアを開ける", "Open door", "开门", "문 열기" },
                 ["hud.interact.close_door"] = new[] { "ドアを閉める", "Close door", "关门", "문 닫기" },
@@ -453,6 +454,7 @@ namespace Game1.Editor
             systems.AddComponent<EnemyBoundaryScenario>();
             systems.AddComponent<ClientRescueScenario>();
             systems.AddComponent<EnemyInteractionScenario>();
+            systems.AddComponent<MenuInputScenario>();
             smoke.Configure(manager);
             NetworkDebuffDirector debuffDirector = systems.AddComponent<NetworkDebuffDirector>();
             debuffDirector.Configure(manager, new List<DebuffDefinition>(debuffs.Values).ToArray());
