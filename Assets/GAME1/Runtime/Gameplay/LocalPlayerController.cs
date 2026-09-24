@@ -1,5 +1,6 @@
 using Game1.Items;
 using Game1.Debuffs;
+using Game1.Enemies;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -32,8 +33,25 @@ namespace Game1.Gameplay
         private PlayerDebuffController debuff;
         private Vector2 movementInput;
         private bool turningThisFrame;
+        private float downedUntil;
+        private float nextFootstep;
+
+        public void Down()
+        {
+            if (!GameplayNoise.HasAuthority || LifeState is PlayerLifeState.Dead or PlayerLifeState.Escaped) return;
+            if (LifeState == PlayerLifeState.Downed)
+            {
+                LifeState = PlayerLifeState.Dead;
+                FindFirstObjectByType<LocalRunController>()?.FailNoSurvivors();
+                return;
+            }
+            DropHeldItem(false);
+            LifeState = PlayerLifeState.Downed;
+            downedUntil = Time.time + 60f;
+        }
 
         public PlayerLifeState LifeState { get; private set; } = PlayerLifeState.Alive;
+        public float DownedSecondsRemaining => LifeState == PlayerLifeState.Downed ? Mathf.Max(0f, downedUntil - Time.time) : 0f;
         public PickupItem HeldItem { get; private set; }
         public Camera ViewCamera => viewCamera;
         public float Stamina => stamina;
@@ -59,6 +77,11 @@ namespace Game1.Gameplay
 
         private void Update()
         {
+            if (LifeState == PlayerLifeState.Downed && Time.time >= downedUntil)
+            {
+                LifeState = PlayerLifeState.Dead;
+                FindFirstObjectByType<LocalRunController>()?.FailNoSurvivors();
+            }
             if (LifeState != PlayerLifeState.Alive) return;
             UpdateLook();
             UpdateMovement();
@@ -111,6 +134,12 @@ namespace Game1.Gameplay
 
             Vector3 planar = transform.right * input.x + transform.forward * input.y;
             controller.Move((planar * speed + Vector3.up * verticalVelocity) * Time.deltaTime);
+            if (planar.sqrMagnitude > 0.01f && Time.time >= nextFootstep)
+            {
+                nextFootstep = Time.time + 0.5f;
+                GameplayNoise.Emit(transform.position, sprinting ? 4f : 1.5f, NoiseKind.Footstep);
+                if (sprinting && debuff != null) GameplayNoise.Emit(transform.position, debuff.HeavyBreathNoiseRadius, NoiseKind.HeavyBreath);
+            }
         }
 
         private void UpdateActions()

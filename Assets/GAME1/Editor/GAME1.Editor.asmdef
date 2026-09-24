@@ -3,6 +3,7 @@
   "rootNamespace": "Game1.Editor",
   "references": [
     "GAME1.Runtime",
+    "Unity.AI.Navigation",
     "Unity.Localization",
     "Unity.Localization.Editor",
     "Unity.RenderPipelines.Universal.Runtime",

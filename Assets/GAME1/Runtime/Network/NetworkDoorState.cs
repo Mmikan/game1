@@ -14,14 +14,24 @@ namespace Game1.Network
 
         private void Update()
         {
+            if (!IsSpawned) return;
+            if (IsServer && HeldByClient.Value != CoopAuthorityRules.NoClient && !TryValidate(HeldByClient.Value, 3f))
+                HeldByClient.Value = CoopAuthorityRules.NoClient;
             if (pivot != null) pivot.localRotation = Quaternion.RotateTowards(pivot.localRotation, Quaternion.Euler(0f, OpenAngle.Value, 0f), 180f * Time.deltaTime);
         }
 
         [ServerRpc(RequireOwnership = false)]
         public void RequestToggleServerRpc(ServerRpcParams rpc = default)
         {
-            if (!TryValidate(rpc.Receive.SenderClientId, 3f)) return;
+            TryToggleOnServer(rpc.Receive.SenderClientId);
+        }
+
+        public bool TryToggleOnServer(ulong clientId)
+        {
+            if (!IsServer || !TryValidate(clientId, 3f) || HeldByClient.Value != CoopAuthorityRules.NoClient) return false;
             OpenAngle.Value = OpenAngle.Value > 1f ? 0f : 100f;
+            Game1.Enemies.GameplayNoise.Emit(transform.position, 4f, Game1.Enemies.NoiseKind.Door);
+            return true;
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -29,7 +39,8 @@ namespace Game1.Network
         {
             ulong sender = rpc.Receive.SenderClientId;
             if (!held && HeldByClient.Value == sender) HeldByClient.Value = CoopAuthorityRules.NoClient;
-            else if (held && OpenAngle.Value > 90f && TryValidate(sender, 3f)) HeldByClient.Value = sender;
+            else if (held && (HeldByClient.Value == CoopAuthorityRules.NoClient || HeldByClient.Value == sender) &&
+                     OpenAngle.Value > 90f && TryValidate(sender, 3f)) HeldByClient.Value = sender;
         }
 
         private bool TryValidate(ulong clientId, float range)

@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using Game1.Config;
 using Game1.Debuffs;
+using Game1.Enemies;
+using Unity.AI.Navigation;
+using UnityEngine.AI;
 using Game1.Gameplay;
 using Game1.Items;
 using Game1.Network;
@@ -130,7 +133,11 @@ namespace Game1.Editor
                 ("dollhouse", 260, 5f, ItemSize.M, 55, 4f, true, 1, 10, 0.5f),
                 ("robot", 330, 9f, ItemSize.L, 20, 5f, true, 1, 8, 0.5f),
                 ("glass_unicorn", 420, 2f, ItemSize.M, 95, 7f, false, 1, 6, 0.1f),
-                ("giant_block", 620, 22f, ItemSize.XL, 10, 7f, true, 2, 4, 0.5f)
+                ("giant_block", 620, 22f, ItemSize.XL, 10, 7f, true, 2, 4, 0.5f),
+                ("cursed_doll", 800, 1.5f, ItemSize.S, 0, 4f, false, 1, 3, 0.5f),
+                ("mirror_box", 1000, 7f, ItemSize.M, 60, 2f, false, 1, 2, 0.5f),
+                ("windup_clown", 1200, 3f, ItemSize.M, 40, 10f, false, 1, 2, 0.5f),
+                ("black_blocks", 1500, 24f, ItemSize.XL, 15, 8f, true, 2, 1, 0.5f)
             };
             var result = new Dictionary<string, ItemDefinition>();
             foreach (var entry in data)
@@ -144,6 +151,9 @@ namespace Game1.Editor
                 }
                 SerializedObject serialized = new(asset);
                 serialized.FindProperty("itemId").stringValue = entry.id;
+                bool cursed = entry.id is "cursed_doll" or "mirror_box" or "windup_clown" or "black_blocks";
+                serialized.FindProperty("rarity").enumValueIndex = (int)(cursed ? ItemRarity.Curse : ItemRarity.Common);
+                serialized.FindProperty("curseId").stringValue = cursed ? entry.id : string.Empty;
                 serialized.FindProperty("localizationKey").stringValue = $"item.{entry.id}.name";
                 serialized.FindProperty("value").intValue = entry.value;
                 serialized.FindProperty("weightKg").floatValue = entry.weight;
@@ -197,11 +207,22 @@ namespace Game1.Editor
 
         private static void CreateLocalization()
         {
+            const string settingsPath = Root + "/Localization/LocalizationSettings.asset";
+            var settings = AssetDatabase.LoadAssetAtPath<UnityEngine.Localization.Settings.LocalizationSettings>(settingsPath);
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance<UnityEngine.Localization.Settings.LocalizationSettings>();
+                AssetDatabase.CreateAsset(settings, settingsPath);
+            }
+            LocalizationEditorSettings.ActiveLocalizationSettings = settings;
             var values = new Dictionary<string, string[]>
             {
                 ["hud.run.time"] = new[] { "残り時間", "Time", "剩余时间", "남은 시간" },
                 ["hud.run.sold"] = new[] { "売却額", "Sold", "已售金额", "판매 금액" },
                 ["hud.player.stamina"] = new[] { "スタミナ", "Stamina", "耐力", "스태미나" },
+                ["hud.player.downed"] = new[] { "ダウン中 — 味方の救助が必要", "Downed — wait for a teammate to rescue you", "已倒地 — 等待队友救援", "쓰러짐 — 팀원의 구조가 필요합니다" },
+                ["hud.player.dead"] = new[] { "死亡 — このラウンドでは復活できません", "Dead — no respawn this round", "已死亡 — 本轮无法复活", "사망 — 이번 라운드에는 부활할 수 없습니다" },
+                ["hud.player.rescue"] = new[] { "救助中（E長押し）", "Rescuing (hold E)", "救援中（按住 E）", "구조 중 (E 길게 누르기)" },
                 ["hud.interact.pick_up"] = new[] { "拾う", "Pick up", "拾取", "줍기" },
                 ["hud.interact.open_door"] = new[] { "ドアを開ける", "Open door", "开门", "문 열기" },
                 ["hud.interact.close_door"] = new[] { "ドアを閉める", "Close door", "关门", "문 닫기" },
@@ -210,6 +231,8 @@ namespace Game1.Editor
                 ["result.failure"] = new[] { "任務失敗", "RUN FAILED", "任务失败", "임무 실패" }
                 , ["settings.graphics.reset"] = new[] { "画面設定をリセット", "Reset Graphics", "重置画面设置", "그래픽 초기화" },
                 ["hud.debuff"] = new[] { "デバフ", "Debuff", "减益", "디버프" },
+                ["hud.enemy.vibration"] = new[] { "危険振動：敵が近い", "Danger vibration: enemy nearby", "危险震动：敌人接近", "위험 진동: 적이 근처에 있음" },
+                ["hud.enemy.revealed"] = new[] { "敵の反応", "Enemy detected", "发现敌人", "적 감지" },
                 ["hud.debuff.drop_warning"] = new[] { "落とす！", "Dropping!", "即将掉落！", "떨어뜨린다!" },
                 ["hud.debuff.debug_cycle"] = new[] { "[F6] デバフ切替（開発用）", "[F6] Cycle debuff (debug)", "[F6] 切换减益（调试）", "[F6] 디버프 전환 (디버그)" },
                 ["debuff.tremor.name"] = new[] { "手の震え", "Tremor", "手部颤抖", "손떨림" },
@@ -237,6 +260,7 @@ namespace Game1.Editor
                 }
                 EditorUtility.SetDirty(table);
             }
+            EditorUtility.SetDirty(collection.SharedData);
         }
 
         private static Locale FindOrCreateLocale(string code, string displayName)
@@ -287,7 +311,8 @@ namespace Game1.Editor
             int index = 0;
             foreach (ItemDefinition definition in definitions.Values)
             {
-                CreateItem(definition, new Vector3(-12f + (index % 3) * 12f, 1f, 5f + (index / 3) * 12f));
+                Vector3 position = definition.Rarity == ItemRarity.Curse ? new Vector3(-12f + (index % 4) * 8f, 1f, 29f) : new Vector3(-12f + (index % 3) * 12f, 1f, 5f + (index / 3) * 12f);
+                CreateItem(definition, position);
                 index++;
             }
             CreateItem(definitions["glass_unicorn"], new Vector3(12f, 1f, 25f));
@@ -299,8 +324,51 @@ namespace Game1.Editor
             hud.Configure(run, player, interactor, exit, graphics);
 
             RenderSettings.ambientLight = new Color(0.08f, 0.09f, 0.12f);
+            CreateEnemies();
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        private static void CreateEnemies()
+        {
+            GameObject navigation = new("EnemyNavigation");
+            NavMeshSurface surface = navigation.AddComponent<NavMeshSurface>();
+            surface.collectObjects = CollectObjects.Volume;
+            surface.center = new Vector3(0f, 1f, 16f);
+            surface.size = new Vector3(33f, 6f, 31f);
+            surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            surface.BuildNavMesh();
+            const string navPath = DataPath + "/EnemyNavMesh.asset";
+            NavMeshData previous = AssetDatabase.LoadAssetAtPath<NavMeshData>(navPath);
+            if (previous == null) AssetDatabase.CreateAsset(surface.navMeshData, navPath);
+            else
+            {
+                EditorUtility.CopySerialized(surface.navMeshData, previous);
+                surface.RemoveData();
+                surface.navMeshData = previous;
+                surface.AddData();
+                EditorUtility.SetDirty(previous);
+            }
+            foreach (EnemyKind kind in System.Enum.GetValues(typeof(EnemyKind)))
+            {
+                GameObject root = new(kind.ToString());
+                root.transform.position = kind == EnemyKind.Mannequin ? new Vector3(0f, 0f, 14f) : new Vector3(13f, 0f, 29f);
+                root.AddComponent<NetworkObject>();
+                root.AddComponent<NetworkTransform>();
+                NavMeshAgent agent = root.AddComponent<NavMeshAgent>();
+                // Start after the scene's NavMeshSurface has registered its data.
+                agent.enabled = false;
+                agent.radius = 0.35f;
+                agent.height = 1.9f;
+                agent.stoppingDistance = 0.3f;
+                EnemyActor enemy = root.AddComponent<EnemyActor>();
+                root.AddComponent<AudibleEnemyCue>();
+                enemy.Configure(kind, new[] { new Vector3(0f, 0f, 5f), new Vector3(0f, 0f, 25f), new Vector3(13f, 0f, 25f), new Vector3(13f, 0f, 5f) });
+                GameObject body = CreateBox("Torso", root.transform.position + Vector3.up, new Vector3(0.55f, 1.2f, 0.35f), kind == EnemyKind.Mannequin ? Color.white : new Color(0.3f, 0.15f, 0.12f));
+                body.transform.SetParent(root.transform, true);
+                GameObject head = CreateBox("Head", root.transform.position + Vector3.up * 1.75f, Vector3.one * 0.35f, Color.gray);
+                head.transform.SetParent(root.transform, true);
+            }
         }
 
         private static LocalPlayerController CreatePlayer()
@@ -314,6 +382,7 @@ namespace Game1.Editor
             LocalPlayerController controller = root.AddComponent<LocalPlayerController>();
 
             GameObject cameraObject = new("ViewCamera");
+            cameraObject.tag = "MainCamera";
             cameraObject.transform.SetParent(root.transform, false);
             cameraObject.transform.localPosition = Vector3.up * 1.62f;
             Camera camera = cameraObject.AddComponent<Camera>();
@@ -338,10 +407,13 @@ namespace Game1.Editor
             item.name = definition.ItemId;
             item.transform.position = position;
             item.transform.localScale = definition.TwoHanded ? new Vector3(1.2f, 0.9f, 0.8f) : Vector3.one * 0.55f;
+            // Floor stock starts resting on the floor; scene startup must not cause a noisy drop.
+            item.transform.position = new Vector3(position.x, item.transform.localScale.y * 0.5f + 0.01f, position.z);
             Rigidbody body = item.AddComponent<Rigidbody>();
             body.mass = definition.WeightKg;
             PickupItem pickup = item.AddComponent<PickupItem>();
             pickup.Configure(definition);
+            item.AddComponent<CurseNoiseEmitter>();
             item.AddComponent<NetworkObject>();
             item.AddComponent<NetworkTransform>();
             NetworkCarryItem networkItem = item.AddComponent<NetworkCarryItem>();
@@ -356,6 +428,12 @@ namespace Game1.Editor
             GameObject panel = CreateBox("DoorPanel", new Vector3(0f, 1.5f, 0f), new Vector3(3f, 3f, 0.25f), new Color(0.28f, 0.2f, 0.12f));
             panel.transform.SetParent(pivot.transform, true);
             panel.transform.localPosition = new Vector3(1.5f, 1.5f, 0f);
+            panel.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+            NavMeshObstacle obstacle = panel.AddComponent<NavMeshObstacle>();
+            obstacle.shape = NavMeshObstacleShape.Box;
+            obstacle.size = Vector3.one;
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = false;
             door.Configure(pivot.transform);
             pivot.AddComponent<NetworkObject>();
             NetworkDoorState networkDoor = pivot.AddComponent<NetworkDoorState>();
@@ -369,14 +447,21 @@ namespace Game1.Editor
             NetworkSessionMenu menu = systems.AddComponent<NetworkSessionMenu>();
             menu.Configure(manager, transport);
             NetworkCoopSmokeDriver smoke = systems.AddComponent<NetworkCoopSmokeDriver>();
+            systems.AddComponent<EnemySmokeScenario>();
+            systems.AddComponent<CurseSmokeScenario>();
+            systems.AddComponent<SoloEnemySmokeScenario>();
+            systems.AddComponent<EnemyBoundaryScenario>();
+            systems.AddComponent<ClientRescueScenario>();
+            systems.AddComponent<EnemyInteractionScenario>();
             smoke.Configure(manager);
             NetworkDebuffDirector debuffDirector = systems.AddComponent<NetworkDebuffDirector>();
             debuffDirector.Configure(manager, new List<DebuffDefinition>(debuffs.Values).ToArray());
             manager.NetworkConfig.NetworkTransport = transport;
             manager.NetworkConfig.PlayerPrefab = CreateNetworkPlayerPrefab();
 
-            NetworkObject stateObject = systems.AddComponent<NetworkObject>();
-            NetworkStageState stage = systems.AddComponent<NetworkStageState>();
+            GameObject stageObject = new("NetworkStage");
+            stageObject.AddComponent<NetworkObject>();
+            NetworkStageState stage = stageObject.AddComponent<NetworkStageState>();
             stage.Configure(config);
         }
 

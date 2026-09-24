@@ -28,6 +28,7 @@ namespace Game1.Gameplay
             float effectiveRange = debuff != null ? debuff.PingRange : range;
             Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
             Vector3 position = Physics.Raycast(ray, out RaycastHit hit, effectiveRange) ? hit.point : ray.GetPoint(effectiveRange);
+            Game1.Enemies.GameplayNoise.Emit(position, 4f, Game1.Enemies.NoiseKind.Ping);
             GameObject marker = markerPrefab != null
                 ? Instantiate(markerPrefab, position + Vector3.up * 0.05f, Quaternion.identity)
                 : GameObject.CreatePrimitive(PrimitiveType.Sphere);

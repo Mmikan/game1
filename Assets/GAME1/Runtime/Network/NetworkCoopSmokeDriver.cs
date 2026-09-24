@@ -58,8 +58,14 @@ namespace Game1.Network
                 .First();
             target.SetLifeStateOnServer(Game1.Gameplay.PlayerLifeState.Downed);
             target.transform.position = rescuer.transform.position + Vector3.right;
+            rescuer.SetInteractHeldServerRpc(true);
             rescuer.RequestReviveServerRpc(target.NetworkObjectId);
-            yield return new WaitForSeconds(2.2f);
+            for (int pulse = 0; pulse < 23; pulse++)
+            {
+                rescuer.SetInteractHeldServerRpc(true);
+                yield return new WaitForSeconds(0.1f);
+            }
+            rescuer.SetInteractHeldServerRpc(false);
             Debug.Log($"GAME1_COOP_SMOKE_RESCUED={target.LifeState.Value == Game1.Gameplay.PlayerLifeState.Alive}");
             target.SetDebuffOnServer(Game1.Debuffs.DebuffKind.HeavyBreath);
             rescuer.SetSupportServerRpc(target.NetworkObjectId, true);

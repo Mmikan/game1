@@ -14,7 +14,119 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
   m_TableCollectionName: UI
   m_TableCollectionNameGuidString: b4072c7f035d06a419bb54bae8df796d
-  m_Entries: []
+  m_Entries:
+  - m_Id: 334919416733696
+    m_Key: hud.run.time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919504814080
+    m_Key: hud.run.sold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008384
+    m_Key: hud.player.stamina
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008385
+    m_Key: hud.interact.pick_up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008386
+    m_Key: hud.interact.open_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008387
+    m_Key: hud.interact.close_door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008388
+    m_Key: hud.exit.progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008389
+    m_Key: result.success
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008390
+    m_Key: result.failure
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008391
+    m_Key: settings.graphics.reset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008392
+    m_Key: hud.debuff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008393
+    m_Key: hud.debuff.drop_warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008394
+    m_Key: hud.debuff.debug_cycle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008395
+    m_Key: debuff.tremor.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008396
+    m_Key: debuff.tunnel_vision.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008397
+    m_Key: debuff.heavy_breath.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008398
+    m_Key: debuff.fragile_grip.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008399
+    m_Key: debuff.hearing_loss.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008400
+    m_Key: debuff.lost_voice.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008401
+    m_Key: debuff.low_light.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008402
+    m_Key: debuff.back_pain.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008403
+    m_Key: debuff.static_fear.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008404
+    m_Key: debuff.balance.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 568373446238208
+    m_Key: hud.enemy.vibration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 568373500764160
+    m_Key: hud.enemy.revealed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930155659264
+    m_Key: hud.player.downed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930231156736
+    m_Key: hud.player.dead
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930231156737
+    m_Key: hud.player.rescue
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

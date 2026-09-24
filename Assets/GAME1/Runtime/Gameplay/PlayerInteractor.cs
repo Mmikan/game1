@@ -14,6 +14,7 @@ namespace Game1.Gameplay
         private IInteractable heldTarget;
         private float heldTime;
         private PlayerDebuffController debuff;
+        private bool consumedPress;
 
         public IInteractable Current { get; private set; }
         public float Progress01 => heldTarget == null ? 0f : Mathf.Clamp01(heldTime / holdSeconds);
@@ -26,8 +27,9 @@ namespace Game1.Gameplay
 
         private void Update()
         {
+            if (Keyboard.current == null || !Keyboard.current.eKey.isPressed) consumedPress = false;
             Current = FindTarget();
-            if (Keyboard.current == null || Current?.CanInteract(player) != true || !Keyboard.current.eKey.isPressed)
+            if (consumedPress || player.LifeState != PlayerLifeState.Alive || Keyboard.current == null || Current?.CanInteract(player) != true || !Keyboard.current.eKey.isPressed)
             {
                 heldTarget = null;
                 heldTime = 0f;
@@ -42,6 +44,7 @@ namespace Game1.Gameplay
             heldTime += Time.deltaTime;
             if (heldTime < holdSeconds) return;
             heldTarget.Interact(player);
+            consumedPress = true;
             heldTarget = null;
             heldTime = 0f;
         }

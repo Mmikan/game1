@@ -12,6 +12,7 @@ namespace Game1.Network
         public NetworkVariable<int> SoldValue { get; } = new(0);
         public NetworkVariable<float> RemainingSeconds { get; } = new(0f);
         public NetworkVariable<RunState> State { get; } = new(RunState.Playing);
+        public int TargetValue => config != null ? config.TargetValue : 0;
         public void Configure(RunConfig value) => config = value;
 
         public override void OnNetworkSpawn()
@@ -33,6 +34,11 @@ namespace Game1.Network
             if (!IsServer || State.Value is RunState.Succeeded or RunState.Failed) return;
             RemainingSeconds.Value = Mathf.Max(0f, RemainingSeconds.Value - Time.deltaTime);
             if (RemainingSeconds.Value <= 0f) State.Value = RunState.Failed;
+            bool anySurvivor = false;
+            foreach (NetworkClient client in NetworkManager.ConnectedClients.Values)
+                if (client.PlayerObject != null && client.PlayerObject.TryGetComponent(out NetworkPlayerAvatar player) &&
+                    player.LifeState.Value != PlayerLifeState.Dead) anySurvivor = true;
+            if (NetworkManager.ConnectedClients.Count > 0 && !anySurvivor) State.Value = RunState.Failed;
         }
 
         public bool TrySellOnServer(int value)

@@ -119,6 +119,7 @@ namespace Game1.Debuffs
             if (Kind != DebuffKind.StaticFear || player.HeldItem == null || player.HeldItem.Definition.Rarity != ItemRarity.Curse || Time.time < nextCurseNoise) return;
             nextCurseNoise = Time.time + definition.Tuning.interval;
             NoiseEmitted?.Invoke(transform.position, allyAssisting ? definition.Tuning.assisted : definition.Tuning.primary, "Curse");
+            Game1.Enemies.GameplayNoise.Emit(transform.position, allyAssisting ? definition.Tuning.assisted : definition.Tuning.primary, Game1.Enemies.NoiseKind.Curse);
         }
 
         public float ResolveMoveSpeed(float baseSpeed, Vector2 input, bool turning)

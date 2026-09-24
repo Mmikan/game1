@@ -818,6 +818,210 @@ MonoBehaviour:
     m_Localized: Balance
     m_Metadata:
       m_Items: []
+  - m_Id: 333974964330496
+    m_Localized: Time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976344256512
+    m_Localized: Sold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450816
+    m_Localized: Stamina
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450817
+    m_Localized: Pick up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450818
+    m_Localized: Open door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450819
+    m_Localized: Close door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450820
+    m_Localized: Escaping
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450821
+    m_Localized: ESCAPED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450822
+    m_Localized: RUN FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450823
+    m_Localized: Reset Graphics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450824
+    m_Localized: Debuff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450825
+    m_Localized: Dropping!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450826
+    m_Localized: '[F6] Cycle debuff (debug)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450827
+    m_Localized: Tremor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450828
+    m_Localized: Tunnel Vision
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450829
+    m_Localized: Heavy Breath
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450830
+    m_Localized: Fragile Grip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450831
+    m_Localized: Hearing Loss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450832
+    m_Localized: Lost Voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450833
+    m_Localized: Low Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450834
+    m_Localized: Back Pain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450835
+    m_Localized: Static Fear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 333976348450836
+    m_Localized: Balance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919416733696
+    m_Localized: Time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919504814080
+    m_Localized: Sold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008384
+    m_Localized: Stamina
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008385
+    m_Localized: Pick up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008386
+    m_Localized: Open door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008387
+    m_Localized: Close door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008388
+    m_Localized: Escaping
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008389
+    m_Localized: ESCAPED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008390
+    m_Localized: RUN FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008391
+    m_Localized: Reset Graphics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008392
+    m_Localized: Debuff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008393
+    m_Localized: Dropping!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008394
+    m_Localized: '[F6] Cycle debuff (debug)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008395
+    m_Localized: Tremor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008396
+    m_Localized: Tunnel Vision
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008397
+    m_Localized: Heavy Breath
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008398
+    m_Localized: Fragile Grip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008399
+    m_Localized: Hearing Loss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008400
+    m_Localized: Lost Voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008401
+    m_Localized: Low Light
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008402
+    m_Localized: Back Pain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008403
+    m_Localized: Static Fear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 334919509008404
+    m_Localized: Balance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 568373446238208
+    m_Localized: 'Danger vibration: enemy nearby'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 568373500764160
+    m_Localized: Enemy detected
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930155659264
+    m_Localized: "Downed \u2014 wait for a teammate to rescue you"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930231156736
+    m_Localized: "Dead \u2014 no respawn this round"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 734930231156737
+    m_Localized: Rescuing (hold E)
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
