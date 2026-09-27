@@ -148,3 +148,7 @@ Logs/phase4-door-boundaries-build.log: Windows build passed (99,456,114 bytes). 
 ## Safe-zone attack boundary acceptance (2026-09-27)
 
 Logs/phase4-safe-edge-build.log: Windows build passed (99,457,142 bytes). Logs/phase4-safe-edge-host.log passes all 17 enemy boundary checks, GAME1_BOUNDARY_COMPLETE success=True. Five new checks verify a close safe-zone target survives, an attack windup starts after entry, crossing z=0 cancels its damage while still within attack range, reentry allows damage, and a downed target in the safe zone survives follow-up attacks. Enemy navigation is disabled only for this boundary fixture to isolate attack eligibility; it is not pursuit/navigation coverage. Client log has no Exception/error/Failed matches. No production AI change was needed for these checks.
+
+## Client rescue HUD visual check (2026-09-27)
+
+Added opt-in -game1-coop-client-capture <path> to capture a real Client frame after replicated rescue progress exceeds 25%. Logs/phase4-client-hud-build.log passed (99,458,666 bytes). Graphic Host/Client run repeats all 15 cooperative input checks successfully. Logs/phase4-client-hud-client.log records progress=0.2611814 and Debuff=Tremor. Logs/phase4-client-rescue-hud.png was visually inspected at 1920x1080: Japanese Tremor label, rescue 26%, downed countdown and stamina are legible without overlap. This verifies the rescued Client HUD, not every support/item display or manual input. Client remains connected until Host finishes; capture does not change gameplay state.

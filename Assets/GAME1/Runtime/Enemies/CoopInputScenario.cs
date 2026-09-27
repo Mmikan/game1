@@ -17,6 +17,12 @@ namespace Game1.Enemies
         private IEnumerator Start()
         {
             string[] args = Environment.GetCommandLineArgs();
+            int clientCapture = Array.IndexOf(args, "-game1-coop-client-capture");
+            if (clientCapture >= 0 && clientCapture + 1 < args.Length)
+            {
+                yield return CaptureClientRescue(args[clientCapture + 1]);
+                yield break;
+            }
             int flag = Array.IndexOf(args, "-game1-coop-input-smoke");
             if (flag < 0 || flag + 1 >= args.Length) yield break;
             string capturePrefix = args[flag + 1];
@@ -136,6 +142,29 @@ namespace Game1.Enemies
                   "disconnect_restores_local_controller_camera");
             Debug.Log($"GAME1_COOP_INPUT_COMPLETE success={!failed}");
             Application.Quit(failed ? 1 : 0);
+        }
+        private IEnumerator CaptureClientRescue(string path)
+        {
+            var manager = GetComponent<NetworkManager>();
+            float deadline = Time.time + 30f;
+            while (Time.time < deadline)
+            {
+                if (manager.IsConnectedClient && !manager.IsHost && manager.LocalClient.PlayerObject != null)
+                {
+                    var self = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayerAvatar>();
+                    var rescuer = FindObjectsByType<NetworkPlayerAvatar>(FindObjectsSortMode.None)
+                        .FirstOrDefault(p => p.IsSpawned && p.RescueTarget.Value == self.NetworkObjectId && p.RescueProgress.Value > 0.25f);
+                    if (rescuer != null && self.LifeState.Value == PlayerLifeState.Downed)
+                    {
+                        yield return new WaitForEndOfFrame();
+                        ScreenCapture.CaptureScreenshot(path);
+                        Debug.Log($"GAME1_CLIENT_HUD_CAPTURE progress={rescuer.RescueProgress.Value} debuff={self.Debuff.Value} path={path}");
+                        yield break;
+                    }
+                }
+                yield return null;
+            }
+            Debug.LogError("GAME1_CLIENT_HUD_CAPTURE timed out before replicated rescue progress");
         }
         private void Check(bool value, string label) { Debug.Log($"GAME1_COOP_INPUT_CHECK {label}={value}"); failed |= !value; }
     }
