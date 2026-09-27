@@ -8,6 +8,7 @@ namespace Game1.Gameplay
         [SerializeField] private float openAngle = 100f;
         [SerializeField] private float turnSpeed = 180f;
         private bool open;
+        public void SetOpenState(bool value) => open = value;
         public void Configure(Transform value) => pivot = value;
 
         public string PromptKey => open ? "hud.interact.close_door" : "hud.interact.open_door";

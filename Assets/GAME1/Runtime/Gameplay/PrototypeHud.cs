@@ -49,6 +49,10 @@ namespace Game1.Gameplay
             int rescueRow = 0;
             if (avatar != null && avatar.SupportingClientId.Value != CoopAuthorityRules.NoClient)
                 GUI.Label(new Rect(Screen.width * 0.5f - 260, Screen.height * 0.72f, 520, 40), Text("hud.player.supporting"), centerStyle);
+            if (avatar != null)
+                foreach (NetworkDoorState door in FindObjectsByType<NetworkDoorState>(FindObjectsSortMode.None))
+                    if (door.IsSpawned && door.HeldByClient.Value == avatar.OwnerClientId)
+                        GUI.Label(new Rect(Screen.width * 0.5f - 260, Screen.height * 0.72f, 520, 40), Text("hud.door.holding"), centerStyle);
             if (online)
                 foreach (NetworkPlayerAvatar rescuer in FindObjectsByType<NetworkPlayerAvatar>(FindObjectsSortMode.None))
                     if (rescuer.IsSpawned && rescuer.RescueTarget.Value != CoopAuthorityRules.NoClient)

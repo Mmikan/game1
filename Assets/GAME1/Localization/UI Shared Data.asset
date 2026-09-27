@@ -131,6 +131,10 @@ MonoBehaviour:
     m_Key: hud.player.supporting
     m_Metadata:
       m_Items: []
+  - m_Id: 1041650794946560
+    m_Key: hud.door.holding
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

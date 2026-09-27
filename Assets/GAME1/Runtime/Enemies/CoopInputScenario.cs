@@ -25,8 +25,11 @@ namespace Game1.Enemies
             while ((!manager.IsHost || manager.ConnectedClients.Count < 2) && Time.time < deadline) yield return null;
             if (!manager.IsHost || manager.ConnectedClients.Count != 2) { Application.Quit(1); yield break; }
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            foreach (var device in InputSystem.devices.ToArray())
+                if (device is Keyboard || device is Mouse) InputSystem.DisableDevice(device);
             var keyboard = InputSystem.AddDevice<Keyboard>();
             keyboard.MakeCurrent();
+            InputSystem.AddDevice<Mouse>().MakeCurrent();
             var host = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayerAvatar>();
             var client = manager.ConnectedClients.Values.First(c => c.ClientId != NetworkManager.ServerClientId).PlayerObject.GetComponent<NetworkPlayerAvatar>();
             host.transform.position = new Vector3(0f, 0f, -5f);
@@ -56,10 +59,35 @@ namespace Game1.Enemies
             yield return new WaitForSeconds(1.3f);
             Check(client.LifeState.Value == PlayerLifeState.Alive, "e_hold_completes_rescue");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return new WaitForSeconds(0.2f);
+            var door = FindFirstObjectByType<NetworkDoorState>();
+            door.transform.position = new Vector3(-1.5f, 0f, -2f);
+            host.transform.position = new Vector3(0f, 0f, -3.5f);
+            client.transform.position = new Vector3(4f, 0f, -4f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.2f);
+            Debug.Log($"GAME1_DOOR_INPUT_POSE host={host.transform.position} look={host.LookDirection.Value} door={door.transform.position}");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return new WaitForSeconds(0.5f);
+            Check(door.OpenAngle.Value == 100f && door.HeldByClient.Value == host.OwnerClientId, "e_hold_opens_and_holds_door");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return new WaitForSeconds(0.2f);
+            Check(door.HeldByClient.Value == CoopAuthorityRules.NoClient, "e_release_frees_door");
+            door.TryToggleOnServer(host.OwnerClientId);
+            yield return new WaitForSeconds(0.7f);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return new WaitForSeconds(0.5f);
+            Check(door.HeldByClient.Value == host.OwnerClientId, "door_rehold_started");
+            host.SetLifeStateOnServer(PlayerLifeState.Downed);
+            yield return null;
+            Check(door.HeldByClient.Value == CoopAuthorityRules.NoClient, "downed_releases_door");
+            host.SetLifeStateOnServer(PlayerLifeState.Alive);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             Vector3 lastPosition = host.transform.position;
             manager.Shutdown();
             yield return new WaitForSeconds(0.5f);
             var local = FindFirstObjectByType<LocalPlayerController>();
+            Debug.Log($"GAME1_DISCONNECT_POSE last={lastPosition} local={local.transform.position} camera={local.ViewCamera.transform.position}");
             Check(local.enabled && local.GetComponent<CharacterController>().enabled &&
                   Vector3.Distance(local.transform.position, lastPosition) < 0.1f &&
                   Vector3.Distance(local.ViewCamera.transform.position, local.transform.position + Vector3.up * 1.62f) < 0.1f,

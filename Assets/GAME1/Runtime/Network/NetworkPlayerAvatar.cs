@@ -22,6 +22,9 @@ namespace Game1.Network
         private float lastInputAt, nextPingAt;
         private float interactHeldUntil;
         private Coroutine rescueRoutine;
+        private NetworkDoorState interactingDoor;
+        private float doorPressedAt;
+        private bool holdingDoor;
         public NetworkVariable<float> RescueProgress { get; } = new(0f);
         public NetworkVariable<ulong> RescueTarget { get; } = new(CoopAuthorityRules.NoClient);
         public NetworkVariable<float> DownedSecondsRemaining { get; } = new(0f);
@@ -59,6 +62,8 @@ namespace Game1.Network
 
         public override void OnNetworkDespawn()
         {
+            // Stop the network collider before restoring the overlapping solo controller.
+            if (motor != null) motor.enabled = false;
             if (localView == null) return;
             localView.transform.SetPositionAndRotation(transform.position, Quaternion.Euler(0f, yaw, 0f));
             localView.ViewCamera.transform.localPosition = Vector3.up * 1.62f;
@@ -71,7 +76,7 @@ namespace Game1.Network
 
         private void LateUpdate()
         {
-            if (!IsOwner || localView == null) return;
+            if (!IsSpawned || !IsOwner || localView == null) return;
             localView.ViewCamera.transform.SetPositionAndRotation(transform.position + Vector3.up * 1.62f, Quaternion.Euler(pitch, yaw, 0f));
             localView.ViewCamera.GetComponent<Light>().enabled = FlashlightOn.Value;
         }
@@ -98,6 +103,16 @@ namespace Game1.Network
         {
             if (IsServer)
             {
+                if (interactingDoor != null)
+                {
+                    if (Time.time >= interactHeldUntil || LifeState.Value != PlayerLifeState.Alive) EndDoorInteraction(false);
+                    else if (Time.time - doorPressedAt >= 0.25f)
+                    {
+                        if (interactingDoor.OpenAngle.Value < 1f) interactingDoor.TryToggleOnServer(OwnerClientId);
+                        holdingDoor = interactingDoor.TrySetHeldOnServer(OwnerClientId, true);
+                        if (!holdingDoor) EndDoorInteraction(false);
+                    }
+                }
                 DownedSecondsRemaining.Value = LifeState.Value == PlayerLifeState.Downed ? Mathf.Max(0f, downedUntil - Time.time) : 0f;
                 if (SupportingClientId.Value != CoopAuthorityRules.NoClient &&
                     (!TryGetPlayer(SupportingClientId.Value, out NetworkPlayerAvatar supported) || supported == this ||
@@ -173,7 +188,12 @@ namespace Game1.Network
             {
                 if (hit.transform.IsChildOf(transform)) continue;
                 if (hit.collider.GetComponentInParent<NetworkCarryItem>() is NetworkCarryItem item) item.TryRequestCarryOnServer(OwnerClientId);
-                else if (hit.collider.GetComponentInParent<NetworkDoorState>() is NetworkDoorState door) door.TryToggleOnServer(OwnerClientId);
+                else if (hit.collider.GetComponentInParent<NetworkDoorState>() is NetworkDoorState door)
+                {
+                    interactingDoor = door;
+                    doorPressedAt = Time.time;
+                    holdingDoor = false;
+                }
                 else if (hit.collider.GetComponentInParent<NetworkPlayerAvatar>() is NetworkPlayerAvatar ally)
                 {
                     if (ally.LifeState.Value == PlayerLifeState.Downed) BeginRescue(ally);
@@ -294,6 +314,7 @@ namespace Game1.Network
             {
                 serverInput = Vector2.zero;
                 interactHeldUntil = 0f;
+                EndDoorInteraction(false);
                 SupportingClientId.Value = CoopAuthorityRules.NoClient;
                 FlashlightOn.Value = false;
                 foreach (NetworkCarryItem item in FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None))
@@ -305,6 +326,16 @@ namespace Game1.Network
         public void SetInteractHeldServerRpc(bool held)
         {
             interactHeldUntil = held && LifeState.Value == PlayerLifeState.Alive ? Time.time + 0.5f : 0f;
+            if (!held) EndDoorInteraction(LifeState.Value == PlayerLifeState.Alive);
+        }
+
+        private void EndDoorInteraction(bool allowTap)
+        {
+            if (interactingDoor == null) return;
+            if (holdingDoor) interactingDoor.TrySetHeldOnServer(OwnerClientId, false);
+            else if (allowTap && Time.time - doorPressedAt < 0.25f) interactingDoor.TryToggleOnServer(OwnerClientId);
+            interactingDoor = null;
+            holdingDoor = false;
         }
 
         private void BeginRescue(NetworkPlayerAvatar target)

@@ -104,3 +104,37 @@ Final checkpoint: Logs/phase4-stability-host.log passed all 20 Host integration 
 - Logs/phase4-priority-host.log: all 18 checks pass, GAME1_INTERACTION_COMPLETE success=True, including prior interruption/door checks plus target priority.
 - Logs/phase4-coop-hud-support.png and phase4-coop-hud-rescue.png were inspected for layout. Logs/phase4-coop-hud-fixed-rescue.png confirms the localized HeavyBreath name matches the Host assignment and rescue progress is readable at the top center. Player meshes remain placeholders.
 - This closes synthetic cooperative E-input, Host HUD placement, disconnect-camera and basic target-priority gaps. Phase 4 remains in progress; do not claim manual mouse/keyboard acceptance or Phase 3 debuff completion.- Final startup-order check: waiting for GAME1_NET_CONNECTED client=0 before launching Client produces a clean connection (Logs/phase4-coop-ready-client.log has no socket recovery/exception messages). Logs/phase4-coop-ready-host.log repeats all five cooperative input checks successfully. The preceding simultaneous-start run did recover from two socket messages; do not erase that evidence.
+
+## Door hold WIP cutoff (2026-09-25)
+
+Uncommitted and NOT acceptance-complete. Added pending E door interaction: tap toggles; >=0.25s hold opens/claims; release, input lease expiry, invalid life/distance release the claim. Added localized holding label and server-side TrySetHeldOnServer helper.
+
+Latest build Logs/phase4-door-hold-retry-build.log succeeds (99,454,066 bytes), but its expanded cooperative input scenario FAILS. Logs/phase4-door-hold-retry-host.log shows support start/cancel and rescue progress/completion passing; e_hold_opens_and_holds_door=False, door_rehold_started=False and disconnect_restores_local_controller_camera=False. The release/downed checks are vacuous while acquisition fails; do not count them as validated door behavior. Last confirmed pushed version is 18cb422.
+
+Retry isolates synthetic keyboard/mouse from physical input inside the test process and moves the Client away from the door fixture. Failure persists. Pose evidence: Host=(0,0,-3.5), look=(0,0,1), door pivot=(-1.5,0,-2). After disconnect local player=(0.99,0.08,-1.97), camera=(0.99,1.70,-1.97), versus last Host=(0,0,-3.5). Investigate collider bounds/raycast hits, relocated-door geometry and local controller collision resolution before changing production behavior further. Earlier support/rescue-only disconnect acceptance passed; this fixture relocates the scene door.
+
+Five-hour and weekly usage both reached 87%. Preserve changes: no commit/push/reset/stash/discard at this cutoff. Launch local Gemma reviewer with current root E:\project-beta; its prompt still contains old spelling E:\project beta, so confirm the actual review target. Resume with the failed door-hold acceptance and do not claim Phase 4 complete.
+
+## Door lifecycle repair checkpoint (2026-09-25)
+
+Moved ongoing door-hold processing from OnNetworkSpawn into server Update. Preserve the replicated open/closed state in InteractableDoor on network despawn. Logs/phase4-door-lifecycle-build.log confirms a successful Windows build (99,454,066 bytes).
+
+Logs/phase4-door-lifecycle-host.log passes 8 of 9 synthetic cooperative input checks: support start/cancel, rescue progress/completion, door hold acquisition/release/reacquisition and downed release. Acquisition now succeeds, so release assertions are no longer vacuous. Disconnect restoration still fails: last=(0,0,-3.5), local=(0.29,0.08,-3.25), camera=(0.29,1.70,-3.25). Camera offset is correct, but position drift remains; investigate collider overlap during shutdown. Client log has no Exception/error/Failed matches. Do not claim full acceptance or Phase 4 completion.
+
+Weekly Codex usage reached 90% (five-hour 13%). Stop at this test checkpoint with all modifications preserved uncommitted; no push/commit/reset/stash/discard. Last pushed source remains 18cb422. Launch local Gemma reviewer with the actual repository root. Its prompt's old path spelling remains a known review-target caveat.
+
+## Disconnect collider handoff (2026-09-27)
+
+Disable the outgoing network CharacterController in OnNetworkDespawn before enabling the solo controller at the same location. Guard LateUpdate with IsSpawned so a despawned avatar cannot overwrite the restored camera. This addresses a potential overlapping-controller handoff, but is NOT yet verified as the cause of the remaining position drift.
+
+Both Logs/phase4-despawn-collider-build.log and Logs/phase4-despawn-collider-retry-build.log stop with license exit 198 (No valid Unity Editor license found; access token unavailable). No new executable or runtime acceptance result was produced. User license confirmation requested. Preserve modifications; no commit/push. Resume by building and rerunning all nine cooperative input checks after licensing is restored. Usage at turn start: five-hour 2%, weekly 0%; this interruption is a licensing blocker, not a usage cutoff.
+
+## Unity startup workflow (2026-09-27)
+
+User instruction: start or confirm Unity Hub before Unity Editor builds at the beginning of work. This machine uses the Microsoft Store installation (UnityTechnologies.UnityHub), not the standard Program Files/Unity Hub path. Discover the current running process path or installed app identity rather than hardcoding the versioned WindowsApps directory. User launched Hub and refreshed license information after exit 198; the subsequent build passed licensing and began compilation. This observation does not establish a universal Hub requirement.
+
+## Verified door and disconnect checkpoint (2026-09-27)
+
+After the user launched Unity Hub and refreshed licensing, Logs/phase4-despawn-hub-build.log completed successfully (99,454,066 bytes). Logs/phase4-despawn-hub-host.log passed all 9 synthetic cooperative input checks, GAME1_COOP_INPUT_COMPLETE success=True. Door hold/release/reacquisition/downed release and previous support/rescue checks pass. Disabling the outgoing network controller before restoring the solo controller eliminates lateral displacement: last=(0,0,-3.5), local=(0,0.08,-3.5), camera=(0,1.70,-3.5). The 0.08m vertical settling stays within the existing 0.1m acceptance tolerance. Client log has no Exception/error/Failed matches.
+
+Publish this tested source checkpoint. Manual input acceptance, Client HUD visual checks, short door taps and input-lease expiration coverage remain open; Phase 4 is not complete. Generated Addressables state stays outside the source commit.

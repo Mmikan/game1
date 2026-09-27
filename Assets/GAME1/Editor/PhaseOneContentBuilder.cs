@@ -224,6 +224,7 @@ namespace Game1.Editor
                 ["hud.player.dead"] = new[] { "死亡 — このラウンドでは復活できません", "Dead — no respawn this round", "已死亡 — 本轮无法复活", "사망 — 이번 라운드에는 부활할 수 없습니다" },
                 ["hud.player.rescue"] = new[] { "救助中（E長押し）", "Rescuing (hold E)", "救援中（按住 E）", "구조 중 (E 길게 누르기)" },
                 ["hud.player.supporting"] = new[] { "味方を支えています [E / C] 解除", "Supporting teammate [E / C] Release", "正在支撑队友 [E / C] 取消", "팀원 부축 중 [E / C] 해제" },
+                ["hud.door.holding"] = new[] { "ドアを保持中 — Eを離すと解除", "Holding door — release E to let go", "正在抵住门 — 松开 E 解除", "문 잡는 중 — E를 놓으면 해제" },
                 ["hud.interact.pick_up"] = new[] { "拾う", "Pick up", "拾取", "줍기" },
                 ["hud.interact.open_door"] = new[] { "ドアを開ける", "Open door", "开门", "문 열기" },
                 ["hud.interact.close_door"] = new[] { "ドアを閉める", "Close door", "关门", "문 닫기" },

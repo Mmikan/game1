@@ -11,6 +11,10 @@ namespace Game1.Network
         public NetworkVariable<float> OpenAngle { get; } = new(0f);
         public NetworkVariable<ulong> HeldByClient { get; } = new(CoopAuthorityRules.NoClient);
         public void Configure(Transform value) => pivot = value;
+        public override void OnNetworkDespawn()
+        {
+            if (TryGetComponent(out InteractableDoor localDoor)) localDoor.SetOpenState(OpenAngle.Value > 1f);
+        }
 
         private void Update()
         {
@@ -37,10 +41,16 @@ namespace Game1.Network
         [ServerRpc(RequireOwnership = false)]
         public void SetHeldServerRpc(bool held, ServerRpcParams rpc = default)
         {
-            ulong sender = rpc.Receive.SenderClientId;
-            if (!held && HeldByClient.Value == sender) HeldByClient.Value = CoopAuthorityRules.NoClient;
+            TrySetHeldOnServer(rpc.Receive.SenderClientId, held);
+        }
+
+        public bool TrySetHeldOnServer(ulong sender, bool held)
+        {
+            if (!IsServer) return false;
+            if (!held && HeldByClient.Value == sender) { HeldByClient.Value = CoopAuthorityRules.NoClient; return true; }
             else if (held && (HeldByClient.Value == CoopAuthorityRules.NoClient || HeldByClient.Value == sender) &&
-                     OpenAngle.Value > 90f && TryValidate(sender, 3f)) HeldByClient.Value = sender;
+                     OpenAngle.Value > 90f && TryValidate(sender, 3f)) { HeldByClient.Value = sender; return true; }
+            return false;
         }
 
         private bool TryValidate(ulong clientId, float range)

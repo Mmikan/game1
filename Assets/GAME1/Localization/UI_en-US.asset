@@ -1026,6 +1026,10 @@ MonoBehaviour:
     m_Localized: Supporting teammate [E / C] Release
     m_Metadata:
       m_Items: []
+  - m_Id: 1041650794946560
+    m_Localized: "Holding door \u2014 release E to let go"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
