@@ -105,12 +105,12 @@ namespace Game1.Network
             {
                 if (interactingDoor != null)
                 {
-                    if (Time.time >= interactHeldUntil || LifeState.Value != PlayerLifeState.Alive) EndDoorInteraction(false);
+                    if (Time.time >= interactHeldUntil || LifeState.Value != PlayerLifeState.Alive) EndDoorInteraction();
                     else if (Time.time - doorPressedAt >= 0.25f)
                     {
                         if (interactingDoor.OpenAngle.Value < 1f) interactingDoor.TryToggleOnServer(OwnerClientId);
                         holdingDoor = interactingDoor.TrySetHeldOnServer(OwnerClientId, true);
-                        if (!holdingDoor) EndDoorInteraction(false);
+                        if (!holdingDoor) EndDoorInteraction();
                     }
                 }
                 DownedSecondsRemaining.Value = LifeState.Value == PlayerLifeState.Downed ? Mathf.Max(0f, downedUntil - Time.time) : 0f;
@@ -130,6 +130,7 @@ namespace Game1.Network
                 }
                 if (Keyboard.current.fKey.wasPressedThisFrame) SetFlashlightServerRpc(!FlashlightOn.Value);
                 if (Keyboard.current.eKey.wasPressedThisFrame) InteractServerRpc();
+                if (Keyboard.current.eKey.wasReleasedThisFrame) SetInteractHeldServerRpc(false);
                 if (Keyboard.current.cKey.wasPressedThisFrame) SetSupportServerRpc(0, false);
                 if (Keyboard.current.qKey.wasPressedThisFrame) PingServerRpc();
                 if (Mouse.current != null && Mouse.current.rightButton.wasReleasedThisFrame) ThrowServerRpc();
@@ -314,7 +315,7 @@ namespace Game1.Network
             {
                 serverInput = Vector2.zero;
                 interactHeldUntil = 0f;
-                EndDoorInteraction(false);
+                EndDoorInteraction();
                 SupportingClientId.Value = CoopAuthorityRules.NoClient;
                 FlashlightOn.Value = false;
                 foreach (NetworkCarryItem item in FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None))
@@ -326,14 +327,13 @@ namespace Game1.Network
         public void SetInteractHeldServerRpc(bool held)
         {
             interactHeldUntil = held && LifeState.Value == PlayerLifeState.Alive ? Time.time + 0.5f : 0f;
-            if (!held) EndDoorInteraction(LifeState.Value == PlayerLifeState.Alive);
+            if (!held) EndDoorInteraction();
         }
 
-        private void EndDoorInteraction(bool allowTap)
+        private void EndDoorInteraction()
         {
             if (interactingDoor == null) return;
             if (holdingDoor) interactingDoor.TrySetHeldOnServer(OwnerClientId, false);
-            else if (allowTap && Time.time - doorPressedAt < 0.25f) interactingDoor.TryToggleOnServer(OwnerClientId);
             interactingDoor = null;
             holdingDoor = false;
         }
