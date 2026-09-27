@@ -100,6 +100,35 @@ namespace Game1.Enemies
             deadline = Time.time + 8f;
             while (players[1].LifeState.Value != PlayerLifeState.Dead && Time.time < deadline) yield return null;
             Check(players[1].LifeState.Value == PlayerLifeState.Dead, "repeat_attack_kills_downed_player");
+            // Hold the enemy at the safe-zone boundary to isolate attack eligibility
+            // from pathfinding. Crossing z=0 keeps the target inside attack range.
+            collector.enabled = false;
+            collector.GetComponent<NavMeshAgent>().enabled = false;
+            mannequin.GetComponent<NavMeshAgent>().enabled = false;
+            mannequin.transform.SetPositionAndRotation(new Vector3(0f, 0f, 0.6f), Quaternion.Euler(0f, 180f, 0f));
+            players[1].SetLifeStateOnServer(PlayerLifeState.Alive);
+            players[1].transform.position = new Vector3(0f, 0f, -0.1f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(2.6f);
+            Check(players[1].LifeState.Value == PlayerLifeState.Alive, "safe_zone_close_target_survives");
+            players[1].transform.position = new Vector3(0f, 0f, 0.1f);
+            Physics.SyncTransforms();
+            deadline = Time.time + 4f;
+            while (mannequin.State != EnemyState.Attack && Time.time < deadline) yield return null;
+            Check(mannequin.State == EnemyState.Attack && players[1].LifeState.Value == PlayerLifeState.Alive, "boundary_attack_windup_started");
+            players[1].transform.position = new Vector3(0f, 0f, -0.1f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.7f);
+            Check(players[1].LifeState.Value == PlayerLifeState.Alive, "crossing_safe_zone_cancels_attack_damage");
+            players[1].transform.position = new Vector3(0f, 0f, 0.1f);
+            Physics.SyncTransforms();
+            deadline = Time.time + 4f;
+            while (players[1].LifeState.Value == PlayerLifeState.Alive && Time.time < deadline) yield return null;
+            Check(players[1].LifeState.Value == PlayerLifeState.Downed, "reentering_danger_zone_allows_attack");
+            players[1].transform.position = new Vector3(0f, 0f, -0.1f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(3f);
+            Check(players[1].LifeState.Value == PlayerLifeState.Downed, "safe_zone_protects_downed_target");
             Debug.Log($"GAME1_BOUNDARY_COMPLETE success={!failed}");
             Application.Quit(failed ? 1 : 0);
         }
