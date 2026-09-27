@@ -179,15 +179,28 @@ namespace Game1.Network
             interactHeldUntil = Time.time + 0.5f;
             if (LifeState.Value != PlayerLifeState.Alive) return;
             if (SupportingClientId.Value != CoopAuthorityRules.NoClient) { SupportingClientId.Value = CoopAuthorityRules.NoClient; return; }
+            NetworkCarryItem carried = null;
             foreach (NetworkCarryItem item in FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None))
                 if (item.PrimaryCarrier.Value == OwnerClientId || item.SecondaryCarrier.Value == OwnerClientId)
-                { item.ReleaseOnServer(); return; }
+                { carried = item; break; }
+            if (carried != null && (carried.IsSharedCarry || carried.Definition.RequiredCarriers == 2))
+            { carried.ReleaseOnServer(); return; }
             Ray ray = new(transform.position + Vector3.up * 1.62f, LookDirection.Value);
             RaycastHit[] hits = Physics.RaycastAll(ray, 3f, ~0, QueryTriggerInteraction.Collide);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
             foreach (RaycastHit hit in hits)
             {
                 if (hit.transform.IsChildOf(transform)) continue;
+                if (carried != null)
+                {
+                    if (hit.collider.GetComponentInParent<NetworkCarryItem>() == carried) continue;
+                    if (hit.collider.GetComponentInParent<NetworkPlayerAvatar>() is NetworkPlayerAvatar recipient)
+                    {
+                        carried.TryTransferOnServer(OwnerClientId, recipient.OwnerClientId);
+                        return;
+                    }
+                    break;
+                }
                 if (hit.collider.GetComponentInParent<NetworkCarryItem>() is NetworkCarryItem item) item.TryRequestCarryOnServer(OwnerClientId);
                 else if (hit.collider.GetComponentInParent<NetworkDoorState>() is NetworkDoorState door)
                 {
@@ -202,6 +215,7 @@ namespace Game1.Network
                 }
                 break;
             }
+            if (carried != null) carried.ReleaseOnServer();
         }
 
         [ServerRpc]

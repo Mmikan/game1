@@ -95,10 +95,23 @@ namespace Game1.Network
         [ServerRpc(RequireOwnership = false)]
         public void RequestTransferServerRpc(ulong targetClientId, ServerRpcParams rpc = default)
         {
-            if (rpc.Receive.SenderClientId != PrimaryCarrier.Value || SecondaryCarrier.Value != CoopAuthorityRules.NoClient || HasItem(targetClientId, this) ||
+            TryTransferOnServer(rpc.Receive.SenderClientId, targetClientId);
+        }
+
+        public bool TryTransferOnServer(ulong sender, ulong targetClientId)
+        {
+            if (!IsServer || sender == targetClientId || sender != PrimaryCarrier.Value || Sold.Value || Stolen.Value ||
+                definition.RequiredCarriers != 1 || SecondaryCarrier.Value != CoopAuthorityRules.NoClient || HasItem(targetClientId, this) ||
                 !TryGetCarrier(PrimaryCarrier.Value, out NetworkPlayerAvatar source) || !TryGetCarrier(targetClientId, out NetworkPlayerAvatar target) ||
-                !CoopAuthorityRules.CanInteract(target.LifeState.Value, target.transform.position, source.transform.position, 2f)) return;
+                source.LifeState.Value != PlayerLifeState.Alive ||
+                !CoopAuthorityRules.CanInteract(target.LifeState.Value, target.transform.position, source.transform.position, 2f)) return false;
+            Vector3 eye = source.transform.position + Vector3.up * 1.62f;
+            Vector3 delta = target.transform.position + Vector3.up * 1.62f - eye;
+            foreach (RaycastHit hit in Physics.RaycastAll(eye, delta.normalized, delta.magnitude, ~0, QueryTriggerInteraction.Ignore))
+                if (!hit.transform.IsChildOf(source.transform) && !hit.transform.IsChildOf(target.transform) &&
+                    !hit.transform.IsChildOf(transform)) return false;
             PrimaryCarrier.Value = targetClientId;
+            return true;
         }
 
         private void OnClientDisconnected(ulong clientId)

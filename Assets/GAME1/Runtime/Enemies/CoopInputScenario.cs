@@ -131,6 +131,53 @@ namespace Game1.Enemies
             Check(door.HeldByClient.Value == CoopAuthorityRules.NoClient, "distance_releases_door");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             yield return new WaitForSeconds(0.2f);
+            client.transform.position = host.transform.position + Vector3.forward * 1.5f;
+            var transferItem = FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None)
+                .First(i => i.Definition.RequiredCarriers == 1 && !i.Definition.TwoHanded && i.Definition.Rarity != Game1.Items.ItemRarity.Curse);
+            transferItem.transform.position = host.transform.position + Vector3.up;
+            Check(transferItem.TryRequestCarryOnServer(host.OwnerClientId), "transfer_fixture_picks_up");
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.1f);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return new WaitForSeconds(0.2f);
+            Check(transferItem.PrimaryCarrier.Value == client.OwnerClientId && transferItem.GetComponent<Rigidbody>().isKinematic,
+                "e_ray_transfers_without_dropping");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return new WaitForSeconds(0.2f);
+            Check(!transferItem.TryTransferOnServer(host.OwnerClientId, client.OwnerClientId), "non_owner_transfer_rejected");
+            Check(transferItem.TryTransferOnServer(client.OwnerClientId, host.OwnerClientId), "transfer_back_to_empty_recipient");
+            var occupiedItem = FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None)
+                .First(i => i != transferItem && i.Definition.RequiredCarriers == 1 && i.Definition.Rarity != Game1.Items.ItemRarity.Curse);
+            occupiedItem.transform.position = client.transform.position + Vector3.up;
+            Check(occupiedItem.TryRequestCarryOnServer(client.OwnerClientId), "recipient_occupied_fixture");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return new WaitForSeconds(0.2f);
+            Check(transferItem.PrimaryCarrier.Value == host.OwnerClientId && occupiedItem.PrimaryCarrier.Value == client.OwnerClientId,
+                "e_on_full_recipient_keeps_both_items");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            occupiedItem.ReleaseOnServer();
+            client.SetLifeStateOnServer(PlayerLifeState.Downed);
+            Check(!transferItem.TryTransferOnServer(host.OwnerClientId, client.OwnerClientId), "downed_recipient_transfer_rejected");
+            client.SetLifeStateOnServer(PlayerLifeState.Alive);
+            client.transform.position += Vector3.forward * 3f;
+            Check(!transferItem.TryTransferOnServer(host.OwnerClientId, client.OwnerClientId), "distant_recipient_transfer_rejected");
+            client.transform.position = host.transform.position + Vector3.forward * 1.5f;
+            var barrier = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            barrier.name = "TransferOcclusionFixture";
+            barrier.transform.position = host.transform.position + Vector3.forward * 0.75f + Vector3.up * 1.5f;
+            barrier.transform.localScale = new Vector3(2f, 2f, 0.1f);
+            Physics.SyncTransforms();
+            Check(!transferItem.TryTransferOnServer(host.OwnerClientId, client.OwnerClientId), "occluded_recipient_transfer_rejected");
+            Destroy(barrier);
+            yield return null;
+            Check(transferItem.TryRequestCarryOnServer(client.OwnerClientId) && transferItem.IsSharedCarry, "shared_release_fixture_acquires_partner");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return new WaitForSeconds(0.2f);
+            Check(transferItem.PrimaryCarrier.Value == CoopAuthorityRules.NoClient && !transferItem.IsSharedCarry,
+                "e_still_releases_shared_item");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            transferItem.ReleaseOnServer();
+            yield return new WaitForSeconds(0.2f);
             Vector3 lastPosition = host.transform.position;
             manager.Shutdown();
             yield return new WaitForSeconds(0.5f);
