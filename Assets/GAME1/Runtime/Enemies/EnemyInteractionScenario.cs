@@ -90,7 +90,7 @@ namespace Game1.Enemies
             Destroy(doorFixture);
             var door = FindFirstObjectByType<NetworkDoorState>();
             Check(!door.TryToggleOnServer(players[0].OwnerClientId), "distant_door_toggle_rejected");
-            players[0].transform.position = door.transform.position + Vector3.forward;
+            players[0].transform.position = door.transform.position + Vector3.back;
             Check(door.TryToggleOnServer(players[0].OwnerClientId) && door.OpenAngle.Value == 100f, "nearby_door_opens");
             door.SetHeldServerRpc(true);
             Check(!door.TryToggleOnServer(players[0].OwnerClientId) && door.OpenAngle.Value == 100f, "held_door_cannot_close");

@@ -109,8 +109,16 @@ namespace Game1.Network
                     else if (Time.time - doorPressedAt >= 0.25f)
                     {
                         if (interactingDoor.OpenAngle.Value < 1f) interactingDoor.TryToggleOnServer(OwnerClientId);
-                        holdingDoor = interactingDoor.TrySetHeldOnServer(OwnerClientId, true);
-                        if (!holdingDoor) EndDoorInteraction();
+                        else if (!interactingDoor.IsHoldingSide(transform.position))
+                        {
+                            if (!holdingDoor) interactingDoor.TryToggleOnServer(OwnerClientId);
+                            EndDoorInteraction();
+                        }
+                        if (interactingDoor != null)
+                        {
+                            holdingDoor = interactingDoor.TrySetHeldOnServer(OwnerClientId, true);
+                            if (!holdingDoor) EndDoorInteraction();
+                        }
                     }
                 }
                 DownedSecondsRemaining.Value = LifeState.Value == PlayerLifeState.Downed ? Mathf.Max(0f, downedUntil - Time.time) : 0f;

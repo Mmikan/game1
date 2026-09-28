@@ -8,9 +8,13 @@ namespace Game1.Network
     public sealed class NetworkDoorState : NetworkBehaviour
     {
         [SerializeField] private Transform pivot;
+        private Vector3 closedForward;
+        private void Awake() => closedForward = transform.forward;
         public NetworkVariable<float> OpenAngle { get; } = new(0f);
         public NetworkVariable<ulong> HeldByClient { get; } = new(CoopAuthorityRules.NoClient);
         public void Configure(Transform value) => pivot = value;
+        // The negative-Z side of the closed doorway is its holding side.
+        public bool IsHoldingSide(Vector3 position) => Vector3.Dot(position - transform.position, closedForward) <= 0f;
         public override void OnNetworkDespawn()
         {
             if (TryGetComponent(out InteractableDoor localDoor)) localDoor.SetOpenState(OpenAngle.Value > 1f);
@@ -19,7 +23,7 @@ namespace Game1.Network
         private void Update()
         {
             if (!IsSpawned) return;
-            if (IsServer && HeldByClient.Value != CoopAuthorityRules.NoClient && !TryValidate(HeldByClient.Value, 3f))
+            if (IsServer && HeldByClient.Value != CoopAuthorityRules.NoClient && !CanHold(HeldByClient.Value))
                 HeldByClient.Value = CoopAuthorityRules.NoClient;
             if (pivot != null) pivot.localRotation = Quaternion.RotateTowards(pivot.localRotation, Quaternion.Euler(0f, OpenAngle.Value, 0f), 180f * Time.deltaTime);
         }
@@ -49,7 +53,7 @@ namespace Game1.Network
             if (!IsServer) return false;
             if (!held && HeldByClient.Value == sender) { HeldByClient.Value = CoopAuthorityRules.NoClient; return true; }
             else if (held && (HeldByClient.Value == CoopAuthorityRules.NoClient || HeldByClient.Value == sender) &&
-                     OpenAngle.Value > 90f && TryValidate(sender, 3f)) { HeldByClient.Value = sender; return true; }
+                     OpenAngle.Value > 90f && CanHold(sender)) { HeldByClient.Value = sender; return true; }
             return false;
         }
 
@@ -59,5 +63,8 @@ namespace Game1.Network
                    client.PlayerObject.TryGetComponent(out NetworkPlayerAvatar player) &&
                    CoopAuthorityRules.CanInteract(player.LifeState.Value, player.transform.position, transform.position, range);
         }
+
+        private bool CanHold(ulong clientId) => TryValidate(clientId, 3f) &&
+            IsHoldingSide(NetworkManager.ConnectedClients[clientId].PlayerObject.transform.position);
     }
 }
