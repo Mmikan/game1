@@ -135,6 +135,26 @@ MonoBehaviour:
     m_Key: hud.door.holding
     m_Metadata:
       m_Items: []
+  - m_Id: 2426387023323136
+    m_Key: hud.door.busy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266176
+    m_Key: hud.door.open_hold_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266177
+    m_Key: hud.door.hold_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266178
+    m_Key: hud.door.close_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266179
+    m_Key: hud.door.open_hint
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

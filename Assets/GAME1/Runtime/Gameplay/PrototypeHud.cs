@@ -47,12 +47,32 @@ namespace Game1.Gameplay
                 GUI.Box(new Rect(Screen.width * 0.5f - 340, Screen.height * 0.56f, 680, 80), status, centerStyle);
             }
             int rescueRow = 0;
+            bool holdingDoor = false;
             if (avatar != null && avatar.SupportingClientId.Value != CoopAuthorityRules.NoClient)
                 GUI.Label(new Rect(Screen.width * 0.5f - 260, Screen.height * 0.72f, 520, 40), Text("hud.player.supporting"), centerStyle);
             if (avatar != null)
                 foreach (NetworkDoorState door in FindObjectsByType<NetworkDoorState>(FindObjectsSortMode.None))
                     if (door.IsSpawned && door.HeldByClient.Value == avatar.OwnerClientId)
+                    {
+                        holdingDoor = true;
                         GUI.Label(new Rect(Screen.width * 0.5f - 260, Screen.height * 0.72f, 520, 40), Text("hud.door.holding"), centerStyle);
+                    }
+            if (avatar != null && life == PlayerLifeState.Alive && !NetworkSessionMenu.MenuOpen && !holdingDoor &&
+                avatar.SupportingClientId.Value == CoopAuthorityRules.NoClient && !NetworkCarryItem.HasItem(avatar.OwnerClientId))
+            {
+                Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
+                RaycastHit[] hits = Physics.RaycastAll(ray, 3f, ~0, QueryTriggerInteraction.Collide);
+                System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+                foreach (RaycastHit hit in hits)
+                {
+                    if (hit.transform.IsChildOf(avatar.transform)) continue;
+                    var door = hit.collider.GetComponentInParent<NetworkDoorState>();
+                    if (door != null && door.IsSpawned)
+                        GUI.Label(new Rect(Screen.width * 0.5f - 380, Screen.height * 0.72f, 760, 40),
+                            Text(door.InteractionPromptKey(avatar.transform.position, avatar.OwnerClientId)), centerStyle);
+                    break;
+                }
+            }
             if (online)
                 foreach (NetworkPlayerAvatar rescuer in FindObjectsByType<NetworkPlayerAvatar>(FindObjectsSortMode.None))
                     if (rescuer.IsSpawned && rescuer.RescueTarget.Value != CoopAuthorityRules.NoClient)

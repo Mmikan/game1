@@ -15,6 +15,13 @@ namespace Game1.Network
         public void Configure(Transform value) => pivot = value;
         // The negative-Z side of the closed doorway is its holding side.
         public bool IsHoldingSide(Vector3 position) => Vector3.Dot(position - transform.position, closedForward) <= 0f;
+        public string InteractionPromptKey(Vector3 position, ulong viewer)
+        {
+            if (HeldByClient.Value != CoopAuthorityRules.NoClient)
+                return HeldByClient.Value == viewer ? "hud.door.holding" : "hud.door.busy";
+            if (IsHoldingSide(position)) return OpenAngle.Value > 1f ? "hud.door.hold_hint" : "hud.door.open_hold_hint";
+            return OpenAngle.Value > 1f ? "hud.door.close_hint" : "hud.door.open_hint";
+        }
         public override void OnNetworkDespawn()
         {
             if (TryGetComponent(out InteractableDoor localDoor)) localDoor.SetOpenState(OpenAngle.Value > 1f);

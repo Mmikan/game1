@@ -73,6 +73,8 @@ namespace Game1.Enemies
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
             Debug.Log($"GAME1_DOOR_INPUT_POSE host={host.transform.position} look={host.LookDirection.Value} door={door.transform.position}");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-door-open-hint.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
             yield return new WaitForSeconds(0.08f);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
@@ -81,6 +83,8 @@ namespace Game1.Enemies
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
             yield return new WaitForSeconds(0.5f);
             Check(door.OpenAngle.Value == 100f && door.HeldByClient.Value == host.OwnerClientId, "e_hold_opens_and_holds_door");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-door-held.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             yield return new WaitForSeconds(0.2f);
             Check(door.HeldByClient.Value == CoopAuthorityRules.NoClient, "e_release_frees_door");
@@ -102,6 +106,8 @@ namespace Game1.Enemies
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
             Check(!door.TrySetHeldOnServer(host.OwnerClientId, true), "opposite_side_cannot_hold");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-door-close-hint.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
             yield return new WaitForSeconds(0.5f);
             Check(door.OpenAngle.Value == 0f && door.HeldByClient.Value == CoopAuthorityRules.NoClient, "opposite_side_e_hold_closes");

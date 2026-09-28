@@ -1030,6 +1030,26 @@ MonoBehaviour:
     m_Localized: "Holding door \u2014 release E to let go"
     m_Metadata:
       m_Items: []
+  - m_Id: 2426387023323136
+    m_Localized: A teammate is holding this door
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266176
+    m_Localized: '[Hold E] Open and hold (holding side)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266177
+    m_Localized: '[Hold E] Hold door (holding side)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266178
+    m_Localized: '[Hold E] Close door (opening side)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2426387065266179
+    m_Localized: '[Hold E] Open door (opening side)'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
