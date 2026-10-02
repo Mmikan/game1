@@ -268,6 +268,7 @@ namespace Game1.Network
             marker.transform.position = point;
             marker.transform.localScale = Vector3.one * 0.2f;
             Destroy(marker.GetComponent<Collider>());
+            PingController.ApplyMarkerMaterial(marker);
             Destroy(marker, 6f);
         }
 

@@ -130,7 +130,7 @@ namespace Game1.Enemies
                     desiredItem = NearestItem();
                     if (desiredItem == null) { Enter(EnemyState.Return); break; }
                     Move(desiredItem.transform.position, 3.4f);
-                    if (Vector3.Distance(transform.position, desiredItem.transform.position) <= 1.4f) Enter(EnemyState.InspectItem);
+                    if (Vector3.Distance(transform.position, desiredItem.transform.position) <= 1f) Enter(EnemyState.InspectItem);
                     break;
                 case EnemyState.InspectItem:
                     if (!Available(desiredItem)) { Enter(EnemyState.Hunt); break; }

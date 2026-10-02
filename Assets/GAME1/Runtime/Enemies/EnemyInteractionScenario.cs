@@ -51,8 +51,12 @@ namespace Game1.Enemies
             while (collector.State != EnemyState.Idle && Time.time < deadline) yield return null;
             Check(collector.State == EnemyState.Idle, "collector_returns_after_losing_sight");
             agent.Warp(new Vector3(0f, 0f, 15f));
-            stock.transform.position = collector.transform.position + Vector3.forward * 0.8f + Vector3.up * 0.3f;
+            stock.transform.position = collector.transform.position + Vector3.forward * 1.2f + Vector3.up * 0.3f;
+            Physics.SyncTransforms();
             GameplayNoise.Emit(collector.transform.position, 4f, NoiseKind.Curse);
+            yield return null;
+            Check(collector.State == EnemyState.Hunt, "collector_waits_until_within_one_meter_to_inspect");
+            stock.transform.position = collector.transform.position + Vector3.forward * 0.8f + Vector3.up * 0.3f;
             deadline = Time.time + 4f;
             while (collector.State != EnemyState.Steal && Time.time < deadline) yield return null;
             Check(collector.State == EnemyState.Steal && pickup.EnemyHolder == collector && stock.Stolen.Value, "theft_claim_acquired");

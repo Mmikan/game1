@@ -56,10 +56,13 @@ namespace Game1.Editor
         public static void BuildWindows()
         {
             Execute();
+            string outputPath = System.Environment.GetEnvironmentVariable("GAME1_BUILD_OUTPUT_PATH");
+            if (string.IsNullOrWhiteSpace(outputPath)) outputPath = "Builds/Windows/GAME1.exe";
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
-                locationPathName = "Builds/Windows/GAME1.exe",
+                locationPathName = outputPath,
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.StrictMode
             };

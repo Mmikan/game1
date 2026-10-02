@@ -7,6 +7,17 @@ namespace Game1.Gameplay
     [RequireComponent(typeof(LocalPlayerController))]
     public sealed class PingController : MonoBehaviour
     {
+        private static Material markerMaterial;
+
+        public static void ApplyMarkerMaterial(GameObject marker)
+        {
+            if (markerMaterial == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                markerMaterial = new Material(shader) { color = Color.cyan };
+            }
+            marker.GetComponent<Renderer>().sharedMaterial = markerMaterial;
+        }
         [SerializeField] private GameObject markerPrefab;
         [SerializeField] private float range = 30f;
         [SerializeField] private float duration = 6f;
@@ -38,7 +49,7 @@ namespace Game1.Gameplay
                 marker.transform.SetPositionAndRotation(position + Vector3.up * 0.25f, Quaternion.identity);
                 marker.transform.localScale = Vector3.one * 0.22f;
                 Destroy(marker.GetComponent<Collider>());
-                marker.GetComponent<Renderer>().material.color = Color.cyan;
+                ApplyMarkerMaterial(marker);
             }
             Destroy(marker, duration);
         }

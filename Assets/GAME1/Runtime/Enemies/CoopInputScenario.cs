@@ -42,6 +42,23 @@ namespace Game1.Enemies
             client.transform.SetPositionAndRotation(new Vector3(0f, 0f, -4f), Quaternion.identity);
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
+            client.transform.position = new Vector3(3f, 0f, -4f);
+            Physics.SyncTransforms();
+            var pitchField = typeof(NetworkPlayerAvatar).GetField("pitch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            pitchField.SetValue(host, 45f);
+            yield return new WaitForSeconds(0.1f);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q));
+            yield return new WaitForSeconds(0.2f);
+            var pingMarker = GameObject.Find("NetworkPing");
+            Check(pingMarker != null && pingMarker.GetComponent<Renderer>().sharedMaterial.shader.name.StartsWith("Universal Render Pipeline/"),
+                "q_ping_uses_urp_material");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-ping.png");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            pitchField.SetValue(host, 0f);
+            client.transform.position = new Vector3(0f, 0f, -4f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.2f);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
             yield return new WaitForSeconds(0.3f);
             Check(host.SupportingClientId.Value == client.OwnerClientId, "e_ray_starts_support");
