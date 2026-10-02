@@ -35,11 +35,13 @@ namespace Game1.Editor
             EnsureFolder(DataPath);
             EnsureFolder(Root + "/Scenes");
             EnsureFolder(Root + "/Localization");
+            EnsureFolder(Root + "/Resources");
             // Localization creates its backing Addressables settings here. Creating the
             // folder through AssetDatabase first keeps batch mode from loading a null
             // settings asset immediately after Directory.CreateDirectory.
             EnsureFolder("Assets/AddressableAssetsData");
             EnsureRenderPipeline();
+            EnsureNoiseDebugMaterial();
             RunConfig runConfig = CreateRunConfig();
             GraphicsPresetDefinition mediumPreset = CreateGraphicsPreset("Medium", GraphicsPresetId.Medium, 1920, 1080, 1f, 60, true);
             GraphicsPresetDefinition safePreset = CreateGraphicsPreset("SafeLow", GraphicsPresetId.Low, 1280, 720, 0.7f, 60, true);
@@ -59,12 +61,13 @@ namespace Game1.Editor
             string outputPath = System.Environment.GetEnvironmentVariable("GAME1_BUILD_OUTPUT_PATH");
             if (string.IsNullOrWhiteSpace(outputPath)) outputPath = "Builds/Windows/GAME1.exe";
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
+            bool development = System.Environment.GetEnvironmentVariable("GAME1_DEVELOPMENT_BUILD") == "1";
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
                 locationPathName = outputPath,
                 target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.StrictMode
+                options = BuildOptions.StrictMode | (development ? BuildOptions.Development : BuildOptions.None)
             };
             BuildReport report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
@@ -92,6 +95,15 @@ namespace Game1.Editor
 
             GraphicsSettings.defaultRenderPipeline = pipeline;
             QualitySettings.renderPipeline = pipeline;
+        }
+
+        private static void EnsureNoiseDebugMaterial()
+        {
+            const string path = Root + "/Resources/GameplayNoiseDebugUnlit.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return;
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) throw new System.Exception("URP Unlit shader is required for development noise circles.");
+            AssetDatabase.CreateAsset(new Material(shader) { color = Color.white }, path);
         }
 
         private static GraphicsPresetDefinition CreateGraphicsPreset(string name, GraphicsPresetId id, int width, int height, float scale, int fps, bool vsync)
