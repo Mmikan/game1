@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Linq;
+using Game1.Debuffs;
 using Game1.Gameplay;
 using Game1.Network;
 using Unity.Netcode;
@@ -23,6 +24,11 @@ namespace Game1.Enemies
                 yield return CaptureClientRescue(args[clientCapture + 1]);
                 yield break;
             }
+            if (Array.IndexOf(args, "-game1-ping-audio-client-smoke") >= 0)
+            {
+                yield return CheckClientPingAudio();
+                yield break;
+            }
             int flag = Array.IndexOf(args, "-game1-coop-input-smoke");
             if (flag < 0 || flag + 1 >= args.Length) yield break;
             string capturePrefix = args[flag + 1];
@@ -42,6 +48,8 @@ namespace Game1.Enemies
             client.transform.SetPositionAndRotation(new Vector3(0f, 0f, -4f), Quaternion.identity);
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
+            client.SetDebuffOnServer(DebuffKind.HearingLoss);
+            yield return new WaitForSeconds(0.2f);
             client.transform.position = new Vector3(3f, 0f, -4f);
             Physics.SyncTransforms();
             var pitchField = typeof(NetworkPlayerAvatar).GetField("pitch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -52,6 +60,10 @@ namespace Game1.Enemies
             var pingMarker = GameObject.Find("NetworkPing");
             Check(pingMarker != null && pingMarker.GetComponent<Renderer>().sharedMaterial.shader.name.StartsWith("Universal Render Pipeline/"),
                 "q_ping_uses_urp_material");
+            Check(GameObject.Find("Audible Ping")?.GetComponent<AudioSource>()?.clip != null, "q_ping_creates_audible_cue");
+            AudioSource ownPingAudio = GameObject.Find("Audible Ping")?.GetComponent<AudioSource>();
+            Check(ownPingAudio != null && ownPingAudio.spatialBlend > 0.99f && Mathf.Abs(ownPingAudio.volume - 1f) < 0.01f,
+                "own_ping_keeps_spatial_audio");
             yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(capturePrefix + "-ping.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
@@ -275,5 +287,25 @@ namespace Game1.Enemies
             Debug.LogError("GAME1_CLIENT_HUD_CAPTURE timed out before replicated rescue progress");
         }
         private void Check(bool value, string label) { Debug.Log($"GAME1_COOP_INPUT_CHECK {label}={value}"); failed |= !value; }
+
+        private IEnumerator CheckClientPingAudio()
+        {
+            var manager = GetComponent<NetworkManager>();
+            float deadline = Time.time + 20f;
+            while ((!manager.IsClient || manager.LocalClient?.PlayerObject == null) && Time.time < deadline) yield return null;
+            if (!manager.IsClient || manager.LocalClient?.PlayerObject == null)
+            {
+                Debug.Log("GAME1_PING_AUDIO_CLIENT_CHECK connected=False");
+                yield break;
+            }
+            var self = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayerAvatar>();
+            while (self.Debuff.Value != DebuffKind.HearingLoss && Time.time < deadline) yield return null;
+            deadline = Time.time + 10f;
+            while (GameObject.Find("Audible Ping") == null && Time.time < deadline) yield return null;
+            AudioSource cue = GameObject.Find("Audible Ping")?.GetComponent<AudioSource>();
+            bool valid = self.Debuff.Value == DebuffKind.HearingLoss && cue != null && cue.clip != null &&
+                         cue.spatialBlend < 0.01f && cue.volume > 0f && cue.volume <= Mathf.Pow(10f, -18f / 20f);
+            Debug.Log($"GAME1_PING_AUDIO_CLIENT_CHECK hearing_loss_teammate_ping={valid} debuff={self.Debuff.Value} spatial={(cue != null ? cue.spatialBlend : -1f)} volume={(cue != null ? cue.volume : -1f)}");
+        }
     }
 }

@@ -269,6 +269,8 @@ namespace Game1.Network
             marker.transform.localScale = Vector3.one * 0.2f;
             Destroy(marker.GetComponent<Collider>());
             PingController.ApplyMarkerMaterial(marker);
+            bool teammatePing = NetworkManager.Singleton != null && OwnerClientId != NetworkManager.Singleton.LocalClientId;
+            AudiblePingCue.Play(point, teammatePing && ListenerDebuff == DebuffKind.HearingLoss);
             Destroy(marker, 6f);
         }
 
