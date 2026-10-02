@@ -129,6 +129,26 @@ namespace Game1.Enemies
             Physics.SyncTransforms();
             yield return new WaitForSeconds(3f);
             Check(players[1].LifeState.Value == PlayerLifeState.Downed, "safe_zone_protects_downed_target");
+            // A moving source must keep the beam on target for two continuous
+            // seconds. Breaking the beam clears the exposure timer.
+            mannequin.transform.SetPositionAndRotation(new Vector3(0f, 0f, 15f), Quaternion.Euler(0f, 180f, 0f));
+            void AimMovingLight()
+            {
+                players[0].transform.position = mannequin.transform.position + Vector3.back * 5f +
+                    Vector3.right * (Mathf.Sin(Time.time * 2f) * 0.35f);
+                players[0].SetLightOnServer(true, (mannequin.transform.position - players[0].transform.position).normalized);
+            }
+            float beamStarted = Time.time;
+            while (Time.time - beamStarted < 1.15f) { AimMovingLight(); yield return null; }
+            Check(mannequin.State != EnemyState.Freeze, "moving_light_before_two_seconds_no_freeze");
+            players[0].SetLightOnServer(false, Vector3.forward);
+            yield return new WaitForSeconds(0.4f);
+            beamStarted = Time.time;
+            while (Time.time - beamStarted < 1.1f) { AimMovingLight(); yield return null; }
+            Check(mannequin.State != EnemyState.Freeze, "broken_beam_resets_moving_exposure");
+            deadline = Time.time + 1.3f;
+            while (mannequin.State != EnemyState.Freeze && Time.time < deadline) { AimMovingLight(); yield return null; }
+            Check(mannequin.State == EnemyState.Freeze, "continuous_moving_light_freezes_mannequin");
             Debug.Log($"GAME1_BOUNDARY_COMPLETE success={!failed}");
             Application.Quit(failed ? 1 : 0);
         }
