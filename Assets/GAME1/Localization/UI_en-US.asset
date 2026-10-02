@@ -1050,6 +1050,18 @@ MonoBehaviour:
     m_Localized: '[Hold E] Open door (opening side)'
     m_Metadata:
       m_Items: []
+  - m_Id: 3760598040764416
+    m_Localized: '[E] Put down item'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901760
+    m_Localized: '[E] Hand to Player {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901761
+    m_Localized: Cannot hand to this player
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -56,22 +56,48 @@ namespace Game1.Gameplay
                     {
                         holdingDoor = true;
                         GUI.Label(new Rect(Screen.width * 0.5f - 260, Screen.height * 0.72f, 520, 40), Text("hud.door.holding"), centerStyle);
+                        DrawDoorProgress(1f);
                     }
             if (avatar != null && life == PlayerLifeState.Alive && !NetworkSessionMenu.MenuOpen && !holdingDoor &&
-                avatar.SupportingClientId.Value == CoopAuthorityRules.NoClient && !NetworkCarryItem.HasItem(avatar.OwnerClientId))
+                avatar.SupportingClientId.Value == CoopAuthorityRules.NoClient)
             {
+                NetworkCarryItem carried = null;
+                foreach (NetworkCarryItem item in FindObjectsByType<NetworkCarryItem>(FindObjectsSortMode.None))
+                    if (item.IsSpawned && (item.PrimaryCarrier.Value == avatar.OwnerClientId || item.SecondaryCarrier.Value == avatar.OwnerClientId))
+                    { carried = item; break; }
                 Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
                 RaycastHit[] hits = Physics.RaycastAll(ray, 3f, ~0, QueryTriggerInteraction.Collide);
                 System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+                string prompt = carried == null ? null : Text("hud.item.drop_hint");
                 foreach (RaycastHit hit in hits)
                 {
                     if (hit.transform.IsChildOf(avatar.transform)) continue;
-                    var door = hit.collider.GetComponentInParent<NetworkDoorState>();
-                    if (door != null && door.IsSpawned)
-                        GUI.Label(new Rect(Screen.width * 0.5f - 380, Screen.height * 0.72f, 760, 40),
-                            Text(door.InteractionPromptKey(avatar.transform.position, avatar.OwnerClientId)), centerStyle);
+                    if (carried != null && hit.collider.GetComponentInParent<NetworkCarryItem>() == carried) continue;
+                    if (carried != null && !carried.IsSharedCarry && carried.Definition.RequiredCarriers == 1 &&
+                        hit.collider.GetComponentInParent<NetworkPlayerAvatar>() is NetworkPlayerAvatar recipient)
+                    {
+                        bool available = recipient.LifeState.Value == PlayerLifeState.Alive &&
+                            Vector3.Distance(avatar.transform.position, recipient.transform.position) <= 2f &&
+                            !NetworkCarryItem.HasItem(recipient.OwnerClientId);
+                        prompt = available ? string.Format(Text("hud.item.transfer_hint"), recipient.OwnerClientId + 1) : Text("hud.item.transfer_unavailable");
+                    }
+                    else if (carried == null)
+                    {
+                        var door = hit.collider.GetComponentInParent<NetworkDoorState>();
+                        if (door != null && door.IsSpawned)
+                        {
+                            prompt = Text(door.InteractionPromptKey(avatar.transform.position, avatar.OwnerClientId));
+                            if (avatar.LocalDoorProgress01 > 0f) DrawDoorProgress(avatar.LocalDoorProgress01);
+                        }
+                        else if (hit.collider.GetComponentInParent<NetworkCarryItem>() is NetworkCarryItem pickup && pickup.IsSpawned &&
+                                 pickup.PrimaryCarrier.Value == CoopAuthorityRules.NoClient && !pickup.Sold.Value && !pickup.Stolen.Value &&
+                                 Vector3.Distance(avatar.transform.position, pickup.transform.position) <= 2f)
+                            prompt = $"[E] {Text("hud.interact.pick_up")}";
+                    }
                     break;
                 }
+                if (prompt != null)
+                    GUI.Label(new Rect(Screen.width * 0.5f - 380, Screen.height * 0.72f, 760, 40), prompt, centerStyle);
             }
             if (online)
                 foreach (NetworkPlayerAvatar rescuer in FindObjectsByType<NetworkPlayerAvatar>(FindObjectsSortMode.None))
@@ -135,6 +161,17 @@ namespace Game1.Gameplay
             float edge = Screen.width * 0.2f;
             GUI.DrawTexture(new Rect(0, 0, edge, Screen.height), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(Screen.width - edge, 0, edge, Screen.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
+        private static void DrawDoorProgress(float progress)
+        {
+            Rect track = new(Screen.width * 0.5f - 140f, Screen.height * 0.72f + 39f, 280f, 10f);
+            Color previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.65f);
+            GUI.DrawTexture(track, Texture2D.whiteTexture);
+            GUI.color = new Color(0.52f, 0.88f, 0.64f, 1f);
+            GUI.DrawTexture(new Rect(track.x + 2f, track.y + 2f, (track.width - 4f) * Mathf.Clamp01(progress), track.height - 4f), Texture2D.whiteTexture);
             GUI.color = previous;
         }
 

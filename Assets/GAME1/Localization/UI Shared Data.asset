@@ -155,6 +155,18 @@ MonoBehaviour:
     m_Key: hud.door.open_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 3760598040764416
+    m_Key: hud.item.drop_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901760
+    m_Key: hud.item.transfer_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901761
+    m_Key: hud.item.transfer_unavailable
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -1050,6 +1050,18 @@ MonoBehaviour:
     m_Localized: "[\u6309\u4F4F E] \u5F00\u95E8\uFF08\u5F00\u5173\u4FA7\uFF09"
     m_Metadata:
       m_Items: []
+  - m_Id: 3760598040764416
+    m_Localized: "[E] \u653E\u4E0B\u7269\u54C1"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901760
+    m_Localized: "[E] \u4EA4\u7ED9 Player {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3760598086901761
+    m_Localized: "\u65E0\u6CD5\u4EA4\u7ED9\u8BE5\u73A9\u5BB6"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

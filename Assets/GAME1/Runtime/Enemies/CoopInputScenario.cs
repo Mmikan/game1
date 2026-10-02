@@ -81,7 +81,10 @@ namespace Game1.Enemies
             yield return new WaitForSeconds(0.3f);
             Check(door.OpenAngle.Value == 0f && door.HeldByClient.Value == CoopAuthorityRules.NoClient, "short_press_does_not_open");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.12f);
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-door-progress.png");
+            yield return new WaitForSeconds(0.38f);
             Check(door.OpenAngle.Value == 100f && door.HeldByClient.Value == host.OwnerClientId, "e_hold_opens_and_holds_door");
             yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(capturePrefix + "-door-held.png");
@@ -177,6 +180,8 @@ namespace Game1.Enemies
             Check(transferItem.TryRequestCarryOnServer(host.OwnerClientId), "transfer_fixture_picks_up");
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.1f);
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-transfer-prompt.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
             yield return new WaitForSeconds(0.2f);
             Check(transferItem.PrimaryCarrier.Value == client.OwnerClientId && transferItem.GetComponent<Rigidbody>().isKinematic,

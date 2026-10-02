@@ -24,7 +24,9 @@ namespace Game1.Network
         private Coroutine rescueRoutine;
         private NetworkDoorState interactingDoor;
         private float doorPressedAt;
+        private float localInteractPressedAt = -1f;
         private bool holdingDoor;
+        public float LocalDoorProgress01 => localInteractPressedAt < 0f ? 0f : Mathf.Clamp01((Time.time - localInteractPressedAt) / 0.25f);
         public NetworkVariable<float> RescueProgress { get; } = new(0f);
         public NetworkVariable<ulong> RescueTarget { get; } = new(CoopAuthorityRules.NoClient);
         public NetworkVariable<float> DownedSecondsRemaining { get; } = new(0f);
@@ -131,6 +133,8 @@ namespace Game1.Network
             if (IsServer && LifeState.Value == PlayerLifeState.Downed && Time.time >= downedUntil) SetLifeStateOnServer(PlayerLifeState.Dead);
             if (IsOwner && !Application.isBatchMode && !NetworkSessionMenu.MenuOpen && Keyboard.current != null && LifeState.Value == PlayerLifeState.Alive)
             {
+                if (Keyboard.current.eKey.wasPressedThisFrame) localInteractPressedAt = Time.time;
+                if (!Keyboard.current.eKey.isPressed) localInteractPressedAt = -1f;
                 if (Mouse.current != null)
                 {
                     Vector2 look = Mouse.current.delta.ReadValue() * 0.12f;
@@ -143,6 +147,7 @@ namespace Game1.Network
                 if (Keyboard.current.qKey.wasPressedThisFrame) PingServerRpc();
                 if (Mouse.current != null && Mouse.current.rightButton.wasReleasedThisFrame) ThrowServerRpc();
             }
+            else if (IsOwner) localInteractPressedAt = -1f;
             if (IsOwner && !Application.isBatchMode && Keyboard.current != null && Time.unscaledTime >= nextInputTime)
             {
                 nextInputTime = Time.unscaledTime + 1f / inputSendRate;
