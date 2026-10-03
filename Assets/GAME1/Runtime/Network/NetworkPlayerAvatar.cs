@@ -10,6 +10,7 @@ namespace Game1.Network
 {
     public sealed class NetworkPlayerAvatar : NetworkBehaviour
     {
+        private static ulong nextNetworkPingId;
         [SerializeField] private float walkSpeed = 4.2f;
         [SerializeField] private float inputSendRate = 20f;
         private float nextInputTime;
@@ -259,11 +260,11 @@ namespace Game1.Network
             Ray ray = new(transform.position + Vector3.up * 1.62f, LookDirection.Value);
             Vector3 point = PingController.FindTargetPoint(ray, 30f, transform);
             GameplayNoise.Emit(point, 4f, NoiseKind.Ping);
-            ShowPingClientRpc(point);
+            ShowPingClientRpc(++nextNetworkPingId, point, NetworkManager.Singleton.ServerTime.Time + 6d);
         }
 
         [ClientRpc]
-        private void ShowPingClientRpc(Vector3 point)
+        private void ShowPingClientRpc(ulong id, Vector3 point, double serverExpiresAt)
         {
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             marker.name = "NetworkPing";
@@ -271,9 +272,10 @@ namespace Game1.Network
             marker.transform.localScale = Vector3.one * 0.32f;
             Destroy(marker.GetComponent<Collider>());
             PingController.ApplyMarkerMaterial(marker);
+            double remaining = serverExpiresAt - NetworkManager.Singleton.ServerTime.Time;
+            PingMarkerView.ShowNetwork(marker, id, point, serverExpiresAt, (float)remaining);
             bool teammatePing = NetworkManager.Singleton != null && OwnerClientId != NetworkManager.Singleton.LocalClientId;
             AudiblePingCue.Play(point, teammatePing && ListenerDebuff == DebuffKind.HearingLoss);
-            Destroy(marker, 6f);
         }
 
         [ServerRpc]

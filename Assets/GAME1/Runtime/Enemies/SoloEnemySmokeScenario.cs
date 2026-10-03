@@ -73,12 +73,32 @@ namespace Game1.Enemies
             bool visible = marker != null && screen.z > 0.1f && screen.x > 0f && screen.x < Screen.width &&
                            screen.y > 0f && screen.y < Screen.height &&
                            Vector3.Distance(marker.transform.position, player.ViewCamera.transform.position) is > 1f and < 10f &&
-                           marker.GetComponent<Renderer>().sharedMaterial.shader.name == "Universal Render Pipeline/Unlit";
+                           marker.GetComponent<Renderer>().sharedMaterial.shader.name == "Universal Render Pipeline/Unlit" &&
+                           marker.GetComponent<PingMarkerView>() is { IsNetworkPing: false } && PingMarkerView.Active.Count == 1;
             Debug.Log($"GAME1_SOLO_PING_CHECK visible={visible} marker={(marker != null ? marker.transform.position.ToString() : "missing")} screen={screen}");
             yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(screenshotPath);
+            ulong firstId = PingMarkerView.Active.Count > 0 ? PingMarkerView.Active[0].Id : 0;
+            var nextAllowedField = typeof(PingController).GetField("nextAllowedTime", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            PingController pingController = player.GetComponent<PingController>();
+            for (int i = 0; i < 3; i++)
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return new WaitForSeconds(0.1f);
+                // Only bypass the cooldown to put four real Q-input markers inside their six-second lifetime.
+                nextAllowedField.SetValue(pingController, Time.time - 1f);
+                player.transform.rotation = Quaternion.Euler(0f, (i - 1) * 25f, 0f);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q));
+                yield return new WaitForSeconds(0.15f);
+            }
+            bool capped = PingMarkerView.Active.Count == 3 && PingMarkerView.Active[0].Id > firstId &&
+                          PingMarkerView.Active[0].Id < PingMarkerView.Active[1].Id &&
+                          PingMarkerView.Active[1].Id < PingMarkerView.Active[2].Id;
+            Debug.Log($"GAME1_SOLO_PING_LIMIT_CHECK max_three_newest={capped} active={PingMarkerView.Active.Count}");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(System.IO.Path.ChangeExtension(screenshotPath, ".limit.png"));
             yield return new WaitForSeconds(1f);
-            Application.Quit(visible ? 0 : 1);
+            Application.Quit(visible && capped ? 0 : 1);
         }
     }
 }

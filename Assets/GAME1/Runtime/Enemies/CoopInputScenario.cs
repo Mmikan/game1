@@ -49,9 +49,11 @@ namespace Game1.Enemies
             host.transform.position = new Vector3(0f, 0f, -5f);
             client.transform.SetPositionAndRotation(new Vector3(0f, 0f, -4f), Quaternion.identity);
             Physics.SyncTransforms();
-            yield return new WaitForSeconds(0.2f);
+            float assignmentDeadline = Time.time + 5f;
+            while (client.Debuff.Value == DebuffKind.None && Time.time < assignmentDeadline) yield return null;
+            Check(client.Debuff.Value != DebuffKind.None, "client_initial_debuff_assigned_before_fixture");
             client.SetDebuffOnServer(DebuffKind.HearingLoss);
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.5f);
             client.transform.position = new Vector3(3f, 0f, -4f);
             Physics.SyncTransforms();
             var pitchField = typeof(NetworkPlayerAvatar).GetField("pitch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -62,6 +64,10 @@ namespace Game1.Enemies
             var pingMarker = GameObject.Find("NetworkPing");
             Check(pingMarker != null && pingMarker.GetComponent<Renderer>().sharedMaterial.shader.name.StartsWith("Universal Render Pipeline/"),
                 "q_ping_uses_urp_material");
+            PingMarkerView networkPing = pingMarker != null ? pingMarker.GetComponent<PingMarkerView>() : null;
+            Check(networkPing != null && networkPing.IsNetworkPing && networkPing.Id > 0 &&
+                  networkPing.ServerExpiresAt > manager.ServerTime.Time && PingMarkerView.Active.Count == 1,
+                "q_ping_replicates_id_expiry_and_visual_entry");
             if (pingMarker != null)
             {
                 Camera view = FindFirstObjectByType<LocalPlayerController>().ViewCamera;
@@ -79,7 +85,15 @@ namespace Game1.Enemies
             yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(capturePrefix + "-ping.png");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            var pingYawField = typeof(NetworkPlayerAvatar).GetField("yaw", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            pingYawField.SetValue(host, 180f);
             pitchField.SetValue(host, 0f);
+            yield return new WaitForSeconds(0.2f);
+            Check(pingMarker != null && FindFirstObjectByType<LocalPlayerController>().ViewCamera.WorldToScreenPoint(pingMarker.transform.position).z < 0f,
+                "q_ping_behind_camera_for_direction_capture");
+            yield return new WaitForEndOfFrame();
+            ScreenCapture.CaptureScreenshot(capturePrefix + "-ping-behind.png");
+            pingYawField.SetValue(host, 0f);
             client.transform.position = new Vector3(0f, 0f, -4f);
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
@@ -318,6 +332,8 @@ namespace Game1.Enemies
             bool valid = self.Debuff.Value == DebuffKind.HearingLoss && cue != null && cue.clip != null &&
                          cue.spatialBlend < 0.01f && cue.volume > 0f && cue.volume <= Mathf.Pow(10f, -18f / 20f);
             Debug.Log($"GAME1_PING_AUDIO_CLIENT_CHECK hearing_loss_teammate_ping={valid} debuff={self.Debuff.Value} spatial={(cue != null ? cue.spatialBlend : -1f)} volume={(cue != null ? cue.volume : -1f)}");
+            PingMarkerView ping = PingMarkerView.Active.Count > 0 ? PingMarkerView.Active[0] : null;
+            Debug.Log($"GAME1_PING_REPLICATION_CLIENT_CHECK id_and_expiry={ping != null && ping.IsNetworkPing && ping.Id > 0 && ping.ServerExpiresAt > manager.ServerTime.Time}");
         }
     }
 }

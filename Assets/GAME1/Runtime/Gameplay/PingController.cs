@@ -65,7 +65,7 @@ namespace Game1.Gameplay
                 Destroy(marker.GetComponent<Collider>());
                 ApplyMarkerMaterial(marker);
             }
-            Destroy(marker, duration);
+            PingMarkerView.ShowSolo(marker, position, duration);
         }
     }
 }

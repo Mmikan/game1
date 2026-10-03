@@ -16,6 +16,8 @@ namespace Game1.Gameplay
         [SerializeField] private GraphicsSettingsService graphics;
         private GUIStyle labelStyle;
         private GUIStyle centerStyle;
+        private GUIStyle pingIconStyle;
+        private GUIStyle pingDistanceStyle;
         public void Configure(LocalRunController runValue, LocalPlayerController playerValue, PlayerInteractor interactorValue, ExitZone exitValue, GraphicsSettingsService graphicsValue)
         {
             run = runValue;
@@ -152,6 +154,66 @@ namespace Game1.Gameplay
                 if (debuff.DropWarning) GUI.Label(new Rect(Screen.width * 0.5f - 150, Screen.height * 0.58f, 300, 48), Text("hud.debuff.drop_warning"), centerStyle);
                 if (debuff.TunnelVisionAlpha > 0f) DrawTunnelVision(debuff.TunnelVisionAlpha);
             }
+            DrawPings(player.ViewCamera);
+        }
+
+        private void DrawPings(Camera view)
+        {
+            if (view == null || PingMarkerView.Active.Count == 0) return;
+            pingIconStyle ??= new GUIStyle(GUI.skin.label)
+                { alignment = TextAnchor.MiddleCenter, fontSize = 20, fontStyle = FontStyle.Bold, normal = { textColor = Color.white } };
+            pingDistanceStyle ??= new GUIStyle(GUI.skin.label)
+                { alignment = TextAnchor.MiddleLeft, fontSize = 14, normal = { textColor = Color.white } };
+            Color previousColor = GUI.color;
+            int previousDepth = GUI.depth;
+            GUI.depth = -10;
+            Vector2 center = new(Screen.width * 0.5f, Screen.height * 0.5f);
+            const float edge = 40f;
+            foreach (PingMarkerView ping in PingMarkerView.Active)
+            {
+                if (ping == null) continue;
+                Vector3 world = ping.WorldPoint + Vector3.up * 0.45f;
+                Vector3 projected = view.WorldToScreenPoint(world);
+                Vector2 screen = new(projected.x, Screen.height - projected.y);
+                Vector3 local = view.transform.InverseTransformPoint(world);
+                // A target behind the camera occupies the lower edge; horizontal offset still indicates its bearing.
+                Vector2 direction = projected.z > 0f ? screen - center : new Vector2(local.x, Mathf.Abs(local.z));
+                if (direction.sqrMagnitude < 0.001f) direction = Vector2.up;
+                direction.Normalize();
+                bool onScreen = projected.z > 0f && screen.x >= edge && screen.x <= Screen.width - edge &&
+                                screen.y >= edge && screen.y <= Screen.height - edge;
+                Vector2 anchor = screen;
+                if (!onScreen)
+                {
+                    float horizontal = (center.x - edge) / Mathf.Max(Mathf.Abs(direction.x), 0.001f);
+                    float vertical = (center.y - edge) / Mathf.Max(Mathf.Abs(direction.y), 0.001f);
+                    anchor = center + direction * Mathf.Min(horizontal, vertical);
+                }
+                GUI.color = new Color(0f, 0.95f, 1f, 0.45f);
+                float lineStart = Mathf.Max(28f, Vector2.Distance(center, anchor) - 160f);
+                DrawPingLine(center + direction * lineStart, anchor - direction * 22f);
+                GUI.color = new Color(0f, 0.95f, 1f, 0.95f);
+                GUI.DrawTexture(new Rect(anchor.x - 16f, anchor.y - 16f, 32f, 32f), Texture2D.whiteTexture);
+                GUI.color = new Color(0.02f, 0.08f, 0.1f, 0.95f);
+                GUI.DrawTexture(new Rect(anchor.x - 12f, anchor.y - 12f, 24f, 24f), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(anchor.x - 16f, anchor.y - 17f, 32f, 32f), "!", pingIconStyle);
+                float distance = Vector3.Distance(view.transform.position, ping.WorldPoint);
+                float labelX = anchor.x > Screen.width - 95f ? anchor.x - 63f : anchor.x + 21f;
+                GUI.Label(new Rect(labelX, anchor.y - 11f, 58f, 24f), $"{Mathf.RoundToInt(distance)}m", pingDistanceStyle);
+            }
+            GUI.color = previousColor;
+            GUI.depth = previousDepth;
+        }
+
+        private static void DrawPingLine(Vector2 start, Vector2 end)
+        {
+            Vector2 delta = end - start;
+            if (delta.sqrMagnitude < 100f) return;
+            Matrix4x4 previousMatrix = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, start);
+            GUI.DrawTexture(new Rect(start.x, start.y - 1f, delta.magnitude, 2f), Texture2D.whiteTexture);
+            GUI.matrix = previousMatrix;
         }
 
         private static void DrawTunnelVision(float alpha)
