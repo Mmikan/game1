@@ -218,3 +218,9 @@ The network avatar's capsule renderer is now hidden only for its owning player; 
 Logs/phase4-ping-self-hit-qa-build.log passed (99,493,581 bytes). Logs/phase4-ping-self-hit-host.log passed all 36 cooperative input checks, including sender-body visibility and a Q target projected on screen beyond the sender's collider; the target was 2.11 m ahead. Logs/phase4-ping-self-hit-ping.png visibly shows the cyan marker in the graphical capture. Logs/phase4-ping-self-hit-client.log passed the HearingLoss teammate-Ping audio check. These are game-side synthetic input and screenshot checks, not manual player-input or subjective audio acceptance. The specification's Ping icon, direction line and three-marker limit remain open, as do the other Phase 4 acceptance items above.
 
 Logs/phase4-ping-self-hit-regular-build.log passed and updated Builds/Windows/GAME1.exe (99,493,589 bytes). Generated scene and Addressables files remain outside this source checkpoint.
+
+## Solo Ping regression capture (2026-10-03)
+
+Added an opt-in game-side Q-input scenario for solo Ping. It positions the camera toward a nearby floor point, verifies a URP/Unlit marker in front of the camera beyond the player's own collider, and captures the rendered result. Logs/phase4-solo-ping-close-qa-build.log passed (99,495,125 bytes). Logs/phase4-solo-ping-close.log reports visible=True with the marker about 2.23 m in front of the camera, and Logs/phase4-solo-ping-close.png visibly shows the cyan marker. This is synthetic input and screenshot acceptance; human keyboard/mouse feel remains open.
+
+Logs/phase4-solo-ping-regular-build.log passed and updated Builds/Windows/GAME1.exe (99,495,117 bytes). Generated scene and Addressables files remain outside this source checkpoint.
