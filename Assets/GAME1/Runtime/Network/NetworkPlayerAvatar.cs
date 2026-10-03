@@ -266,13 +266,15 @@ namespace Game1.Network
         [ClientRpc]
         private void ShowPingClientRpc(ulong id, Vector3 point, double serverExpiresAt)
         {
+            double remaining = serverExpiresAt - NetworkManager.Singleton.ServerTime.Time;
+            if (remaining <= 0d) return;
+
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             marker.name = "NetworkPing";
             marker.transform.position = point + Vector3.up * 0.25f;
             marker.transform.localScale = Vector3.one * 0.32f;
             Destroy(marker.GetComponent<Collider>());
             PingController.ApplyMarkerMaterial(marker);
-            double remaining = serverExpiresAt - NetworkManager.Singleton.ServerTime.Time;
             PingMarkerView.ShowNetwork(marker, id, point, serverExpiresAt, (float)remaining);
             bool teammatePing = NetworkManager.Singleton != null && OwnerClientId != NetworkManager.Singleton.LocalClientId;
             AudiblePingCue.Play(point, teammatePing && ListenerDebuff == DebuffKind.HearingLoss);
