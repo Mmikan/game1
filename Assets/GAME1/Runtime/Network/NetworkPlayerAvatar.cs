@@ -46,6 +46,8 @@ namespace Game1.Network
         {
             if (IsServer) transform.position = new Vector3((float)OwnerClientId * 1.2f, 0f, -4f);
             if (TryGetComponent(out CapsuleCollider capsule)) { capsule.center = Vector3.up * 0.875f; capsule.height = 1.75f; capsule.radius = 0.32f; capsule.isTrigger = true; }
+            // The first-person camera sits inside this capsule. Keep teammates visible, but hide the local body.
+            if (TryGetComponent(out Renderer bodyRenderer)) bodyRenderer.enabled = !IsOwner;
             if (IsServer)
             {
                 motor = gameObject.AddComponent<CharacterController>();
@@ -255,7 +257,7 @@ namespace Game1.Network
             if (LifeState.Value != PlayerLifeState.Alive || Time.time < nextPingAt) return;
             nextPingAt = Time.time + (Debuff.Value == DebuffKind.LostVoice ? 4f : 2f);
             Ray ray = new(transform.position + Vector3.up * 1.62f, LookDirection.Value);
-            Vector3 point = Physics.Raycast(ray, out RaycastHit hit, 30f, ~0, QueryTriggerInteraction.Ignore) ? hit.point : ray.GetPoint(30f);
+            Vector3 point = PingController.FindTargetPoint(ray, 30f, transform);
             GameplayNoise.Emit(point, 4f, NoiseKind.Ping);
             ShowPingClientRpc(point);
         }
@@ -265,8 +267,8 @@ namespace Game1.Network
         {
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             marker.name = "NetworkPing";
-            marker.transform.position = point;
-            marker.transform.localScale = Vector3.one * 0.2f;
+            marker.transform.position = point + Vector3.up * 0.25f;
+            marker.transform.localScale = Vector3.one * 0.32f;
             Destroy(marker.GetComponent<Collider>());
             PingController.ApplyMarkerMaterial(marker);
             bool teammatePing = NetworkManager.Singleton != null && OwnerClientId != NetworkManager.Singleton.LocalClientId;

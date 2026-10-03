@@ -44,6 +44,8 @@ namespace Game1.Enemies
             InputSystem.AddDevice<Mouse>().MakeCurrent();
             var host = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayerAvatar>();
             var client = manager.ConnectedClients.Values.First(c => c.ClientId != NetworkManager.ServerClientId).PlayerObject.GetComponent<NetworkPlayerAvatar>();
+            Check(host.GetComponent<Renderer>() is { enabled: false } && client.GetComponent<Renderer>() is { enabled: true },
+                "first_person_hides_own_avatar_only");
             host.transform.position = new Vector3(0f, 0f, -5f);
             client.transform.SetPositionAndRotation(new Vector3(0f, 0f, -4f), Quaternion.identity);
             Physics.SyncTransforms();
@@ -60,6 +62,16 @@ namespace Game1.Enemies
             var pingMarker = GameObject.Find("NetworkPing");
             Check(pingMarker != null && pingMarker.GetComponent<Renderer>().sharedMaterial.shader.name.StartsWith("Universal Render Pipeline/"),
                 "q_ping_uses_urp_material");
+            if (pingMarker != null)
+            {
+                Camera view = FindFirstObjectByType<LocalPlayerController>().ViewCamera;
+                Vector3 screenPoint = view.WorldToScreenPoint(pingMarker.transform.position);
+                Debug.Log($"GAME1_PING_VISUAL_DIAGNOSTIC marker={pingMarker.transform.position} camera={view.transform.position} screen={screenPoint} screen_size={Screen.width}x{Screen.height} color={pingMarker.GetComponent<Renderer>().sharedMaterial.color}");
+                Check(screenPoint.z > 0.1f && screenPoint.x > 0f && screenPoint.x < Screen.width &&
+                      screenPoint.y > 0f && screenPoint.y < Screen.height &&
+                      Vector3.Distance(pingMarker.transform.position, view.transform.position) > 1f,
+                    "q_ping_targets_visible_point_beyond_own_collider");
+            }
             Check(GameObject.Find("Audible Ping")?.GetComponent<AudioSource>()?.clip != null, "q_ping_creates_audible_cue");
             AudioSource ownPingAudio = GameObject.Find("Audible Ping")?.GetComponent<AudioSource>();
             Check(ownPingAudio != null && ownPingAudio.spatialBlend > 0.99f && Mathf.Abs(ownPingAudio.volume - 1f) < 0.01f,

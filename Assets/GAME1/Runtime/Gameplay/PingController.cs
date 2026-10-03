@@ -13,11 +13,24 @@ namespace Game1.Gameplay
         {
             if (markerMaterial == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
                 markerMaterial = new Material(shader) { color = Color.cyan };
             }
             marker.GetComponent<Renderer>().sharedMaterial = markerMaterial;
         }
+        public static Vector3 FindTargetPoint(Ray ray, float maxDistance, Transform sender)
+        {
+            Vector3 point = ray.GetPoint(maxDistance);
+            float nearest = maxDistance;
+            foreach (RaycastHit hit in Physics.RaycastAll(ray, maxDistance, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.IsChildOf(sender) || hit.distance >= nearest) continue;
+                nearest = hit.distance;
+                point = hit.point;
+            }
+            return point;
+        }
+
         [SerializeField] private GameObject markerPrefab;
         [SerializeField] private float range = 30f;
         [SerializeField] private float duration = 6f;
@@ -38,7 +51,7 @@ namespace Game1.Gameplay
             nextAllowedTime = Time.time + cooldown;
             float effectiveRange = debuff != null ? debuff.PingRange : range;
             Ray ray = new(player.ViewCamera.transform.position, player.ViewCamera.transform.forward);
-            Vector3 position = Physics.Raycast(ray, out RaycastHit hit, effectiveRange) ? hit.point : ray.GetPoint(effectiveRange);
+            Vector3 position = FindTargetPoint(ray, effectiveRange, player.transform);
             Game1.Enemies.GameplayNoise.Emit(position, 4f, Game1.Enemies.NoiseKind.Ping);
             Game1.Enemies.AudiblePingCue.Play(position, false);
             GameObject marker = markerPrefab != null
